@@ -1,0 +1,31 @@
+{
+  "name": "cas-genesisworld-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing a read-only (GET-only) subset of the CAS genesisWorld REST Webservice v7.0.",
+  "type": "module",
+  "bin": {
+    "cas-genesisworld-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "swagger.json",
+    "AGENTS.md",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/index.js",
+    "start": "node dist/index.js",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules/
+.git/
+.gitsecret/
+.gitsecrets/
+.github/
+.openclaw/
+Dockerfile
+.dockerignore
+*.md
+.env
+.DS_Store
+dist/
