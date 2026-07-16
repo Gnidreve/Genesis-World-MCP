@@ -700,6 +700,581 @@ server.registerTool(
   }
 );
 
+
+/* ------------------------------------------------------------------ *
+ * Tool 9: list_links                                                 *
+ * GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list        *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_links",
+  {
+    title: "List Links (genesisWorld)",
+    description:
+      "Read-only fetch of all links (relationships) for a data object. " +
+      "Filters by object-type, gguid, attribute, and link-direction. " +
+      "Maps to GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      dataObjectGGUID: z
+        .string()
+        .describe("GGUID of the data object (path segment)."),
+      objectType: z
+        .string()
+        .optional()
+        .describe("Filters links by object type (API param 'object-type')."),
+      gguid: z
+        .string()
+        .optional()
+        .describe("Filters links by data object GUID (API param 'gguid')."),
+      attribute: z
+        .string()
+        .optional()
+        .describe("Filters links by link attribute (API param 'attribute')."),
+      linkDirection: z
+        .string()
+        .optional()
+        .describe("Filters links by link direction (API param 'link-direction')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/${encodeURIComponent(args.dataObjectGGUID)}/link/list`;
+      const text = await apiGet(path, {
+        "object-type": args.objectType,
+        gguid: args.gguid,
+        attribute: args.attribute,
+        "link-direction": args.linkDirection,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 10: list_recent_data_objects                                  *
+ * GET /v7.0/type/{dataObjectType}/recent/list                        *
+ * ⚠️  Has whereString – no view required!                            *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_recent_data_objects",
+  {
+    title: "List Recent Data Objects (genesisWorld)",
+    description:
+      "Read-only list of recently used data objects of a given type. " +
+      "Supports the 'whereString' parameter for field-level filtering " +
+      "without needing a view. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/recent/list.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      fields: z
+        .string()
+        .optional()
+        .describe("Comma-separated list of fields to return (API param 'fields')."),
+      whereString: z
+        .string()
+        .optional()
+        .describe(
+          "Field-level filter expression (API param 'where-string'). " +
+          "Format depends on the genesisWorld API."
+        ),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}/recent/list`;
+      const text = await apiGet(path, {
+        fields: args.fields,
+        "where-string": args.whereString,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 11: get_available_products                                    *
+ * GET /v7.0/type/gwopportunity/availableproducts                     *
+ * ⚠️  Has whereString!                                               *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_available_products",
+  {
+    title: "Get Available Products (genesisWorld)",
+    description:
+      "Read-only list of available products for an opportunity. " +
+      "Supports the 'whereString' parameter for field-level filtering. " +
+      "Maps to GET /v7.0/type/gwopportunity/availableproducts.",
+    inputSchema: {
+      whereString: z
+        .string()
+        .optional()
+        .describe(
+          "Field-level filter expression (API param 'where-string')."
+        ),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects matching the search term."
+        ),
+      fields: z
+        .string()
+        .optional()
+        .describe("Comma-separated list of fields to return (API param 'fields')."),
+      orderBy: z
+        .string()
+        .optional()
+        .describe("Order specification (API param 'order-by')."),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path = "/v7.0/type/gwopportunity/availableproducts";
+      const text = await apiGet(path, {
+        "where-string": args.whereString,
+        search: args.search,
+        fields: args.fields,
+        "order-by": args.orderBy,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 12: get_data_object_count                                     *
+ * GET /v7.0/type/{dataObjectType}/count                              *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_data_object_count",
+  {
+    title: "Get Data Object Count (genesisWorld)",
+    description:
+      "Read-only count of data objects of a given type, with optional " +
+      "search filter. Maps to GET /v7.0/type/{dataObjectType}/count.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the count for data objects matching the search term."
+        ),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}/count`;
+      const text = await apiGet(path, {
+        search: args.search,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 13: get_primary_link_parents                                  *
+ * GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents*
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_primary_link_parents",
+  {
+    title: "Get Primary Link Parents (genesisWorld)",
+    description:
+      "Read-only fetch of primary linked parent objects for a data " +
+      "object. For example, which ADDRESS is the primary account for an " +
+      "opportunity. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'GWOPPORTUNITY', 'TASK'."),
+      dataObjectGGUID: z
+        .string()
+        .describe("GGUID of the data object (path segment)."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/${encodeURIComponent(args.dataObjectGGUID)}/primarylinkparents`;
+      const text = await apiGet(path, {});
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 14: list_users                                                *
+ * GET /v7.0/user/list                                                *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_users",
+  {
+    title: "List Users (genesisWorld)",
+    description:
+      "Read-only list of all users with optional pagination. Useful to " +
+      "resolve PERSONINCHARGE names to user details. Maps to " +
+      "GET /v7.0/user/list.",
+    inputSchema: {
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+      objectType: z
+        .string()
+        .optional()
+        .describe("Filter by object type (API param 'object-type')."),
+      domainGuid: z
+        .string()
+        .optional()
+        .describe("Filter by domain GUID (API param 'domain-guid')."),
+      minPermission: z
+        .number()
+        .int()
+        .optional()
+        .describe("Minimum permission level (API param 'min-permission')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path = "/v7.0/user/list";
+      const text = await apiGet(path, {
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+        "object-type": args.objectType,
+        "domain-guid": args.domainGuid,
+        "min-permission": args.minPermission,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 15: get_user_self                                             *
+ * GET /v7.0/user/self                                                *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_user_self",
+  {
+    title: "Get User Self (genesisWorld)",
+    description:
+      "Read-only fetch of the authenticated user's own profile and meta " +
+      "data. Maps to GET /v7.0/user/self.",
+    inputSchema: {
+      fields: z
+        .string()
+        .optional()
+        .describe("Comma-separated list of fields to return (API param 'fields')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path = "/v7.0/user/self";
+      const text = await apiGet(path, {
+        fields: args.fields,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 16: get_view                                                  *
+ * GET /v7.0/type/{dataObjectType}/view/{viewID}                      *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_view",
+  {
+    title: "Get View (genesisWorld)",
+    description:
+      "Read-only details of a specific view, including its configuration " +
+      "and filter criteria. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/view/{viewID}.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      viewId: z
+        .string()
+        .describe("View ID (path segment). Use list_views to discover available IDs."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/view/${encodeURIComponent(args.viewId)}`;
+      const text = await apiGet(path, {});
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 17: list_tags                                                 *
+ * GET /v7.0/tags                                                     *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_tags",
+  {
+    title: "List Tags (genesisWorld)",
+    description:
+      "Read-only list of all tags in the system, with optional " +
+      "pagination. Maps to GET /v7.0/tags.",
+    inputSchema: {
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path = "/v7.0/tags";
+      const text = await apiGet(path, {
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 18: get_object_tags                                           *
+ * GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags             *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_object_tags",
+  {
+    title: "Get Object Tags (genesisWorld)",
+    description:
+      "Read-only fetch of all tags assigned to a specific data object. " +
+      "Maps to GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      dataObjectGGUID: z
+        .string()
+        .describe("GGUID of the data object (path segment)."),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/${encodeURIComponent(args.dataObjectGGUID)}/tags`;
+      const text = await apiGet(path, {
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 19: get_full_data_objects                                     *
+ * GET /v7.0/type/{dataObjectType}/full                               *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "get_full_data_objects",
+  {
+    title: "Get Full Data Objects (genesisWorld)",
+    description:
+      "Read-only fetch of data objects of a given type in full view " +
+      "(all fields). Supports the same filters as list_data_objects but " +
+      "returns the complete field set. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/full.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects matching the search term."
+        ),
+      fields: z
+        .string()
+        .optional()
+        .describe("Comma-separated list of fields to return (API param 'fields')."),
+      orderBy: z
+        .string()
+        .optional()
+        .describe("Order specification (API param 'order-by')."),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}/full`;
+      const text = await apiGet(path, {
+        search: args.search,
+        fields: args.fields,
+        "order-by": args.orderBy,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 20: list_data_objects_by_view_full                            *
+ * GET /v7.0/type/{dataObjectType}/view/{viewID}/full                 *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_data_objects_by_view_full",
+  {
+    title: "List Data Objects by View Full (genesisWorld)",
+    description:
+      "Read-only fetch of data objects of a given type, filtered " +
+      "through a specific view, in full view (all fields). Supports " +
+      "the 'whereString' parameter for field-level filtering. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/view/{viewID}/full.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe("Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."),
+      viewId: z
+        .string()
+        .describe("View ID (path segment). Use list_views to discover available IDs."),
+      whereString: z
+        .string()
+        .optional()
+        .describe(
+          "Field-level filter expression (API param 'where-string')."
+        ),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects matching the search term."
+        ),
+      fields: z
+        .string()
+        .optional()
+        .describe("Comma-separated list of fields to return (API param 'fields')."),
+      orderBy: z
+        .string()
+        .optional()
+        .describe("Order specification (API param 'order-by')."),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/view/${encodeURIComponent(args.viewId)}/full`;
+      const text = await apiGet(path, {
+        "where-string": args.whereString,
+        search: args.search,
+        fields: args.fields,
+        "order-by": args.orderBy,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
 return server;
 }
 

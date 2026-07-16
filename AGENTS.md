@@ -25,32 +25,52 @@ cross-reference** for every tool in `src/index.ts`.
   to leaving it out.
 
 The upstream API has 209 operations in total (133 GET / 46 POST / 17 DELETE /
-13 PUT). We are intentionally starting with a tiny read-only slice.
+13 PUT). This implementation covers 20 of 133 GET endpoints.
 
 ## Currently implemented tools
 
-| Tool                               | HTTP | Endpoint                                                          | Read-only |
-| ---------------------------------- | ---- | ----------------------------------------------------------------- | --------- |
-| `smart_search`                     | GET  | `/v7.0/smartsearch`                                               | ✅        |
-| `get_data_object`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}`                  | ✅        |
-| `get_dossier`                      | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`     | ✅        |
-| `list_data_objects`                | GET  | `/v7.0/type/{dataObjectType}/list`                               | ✅        |
-| `list_views`                       | GET  | `/v7.0/type/{dataObjectType}/view/list`                          | ✅        |
-| `list_data_objects_by_view`        | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/list`                 | ✅        |
-| `list_available_data_object_types` | GET  | `/v7.0/user/self/dataobjecttypepermission/list`                 | ✅        |
-| `get_data_object_types_metadata`   | GET  | `/v7.0/metadata`                                                 | ✅        |
+| #  | Tool                               | HTTP | Endpoint                                                          | Read-only |
+|----|------------------------------------|------|-------------------------------------------------------------------|-----------|
+| 1  | `smart_search`                     | GET  | `/v7.0/smartsearch`                                               | ✅        |
+| 2  | `get_data_object`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}`                   | ✅        |
+| 3  | `get_dossier`                      | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`      | ✅        |
+| 4  | `list_data_objects`                | GET  | `/v7.0/type/{dataObjectType}/list`                                | ✅        |
+| 5  | `list_views`                       | GET  | `/v7.0/type/{dataObjectType}/view/list`                           | ✅        |
+| 6  | `list_data_objects_by_view`        | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/list`                  | ✅        |
+| 7  | `list_available_data_object_types` | GET  | `/v7.0/user/self/dataobjecttypepermission/list`                   | ✅        |
+| 8  | `get_data_object_types_metadata`   | GET  | `/v7.0/metadata`                                                  | ✅        |
+| 9  | `list_links`                       | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list`         | ✅        |
+| 10 | `list_recent_data_objects`         | GET  | `/v7.0/type/{dataObjectType}/recent/list`                         | ✅        |
+| 11 | `get_available_products`           | GET  | `/v7.0/type/gwopportunity/availableproducts`                      | ✅        |
+| 12 | `get_data_object_count`            | GET  | `/v7.0/type/{dataObjectType}/count`                               | ✅        |
+| 13 | `get_primary_link_parents`         | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents`| ✅        |
+| 14 | `list_users`                       | GET  | `/v7.0/user/list`                                                 | ✅        |
+| 15 | `get_user_self`                    | GET  | `/v7.0/user/self`                                                 | ✅        |
+| 16 | `get_view`                         | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}`                       | ✅        |
+| 17 | `list_tags`                        | GET  | `/v7.0/tags`                                                      | ✅        |
+| 18 | `get_object_tags`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags`              | ✅        |
+| 19 | `get_full_data_objects`            | GET  | `/v7.0/type/{dataObjectType}/full`                                | ✅        |
+| 20 | `list_data_objects_by_view_full`   | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/full`                  | ✅        |
 
-Tools 4–6 are **list/filter tools**: `list_data_objects` provides paginated listing of data
-objects with search, time-range, and link-based filtering; `list_views` discovers available
-views for a type; `list_data_objects_by_view` additionally supports a `whereString` parameter
-for field-level filtering (syntax depends on the genesisWorld API version — try
-`FIELDNAME='value'` or `FIELDNAME LIKE 'pattern'`).
+### Tool categories
 
-The last two are **type-discovery** tools: `list_available_data_object_types`
-returns the types the authenticated user may access (lean, permission-scoped,
-the canonical source for valid `dataObjectType` / `object-type(s)` values);
-`get_data_object_types_metadata` returns the richer type descriptions incl.
-field schemas (useful for filling the `fields` argument of `get_data_object`).
+**Search & Discovery (1–3):** Smart full-text search across all types, single-object fetch with field selection, dossier with linked records/activities/documents.
+
+**List & Filter (4–6, 12, 19):** Paginated lists with `search`, time-range, and link-based filtering — list view (lean), full view (all fields), plus record counts.
+
+**View-based (5, 6, 16, 20):** View discovery, detail, and view-filtered listing in both list and full view. Tools 6 and 20 support the `whereString` parameter for field-level filtering (syntax depends on genesisWorld API version).
+
+**Relationships (9, 13):** Link listing with type/attribute/direction filters, and primary-link-parent resolution.
+
+**`whereString`-enabled endpoints (tools without view requirement):**
+- Tool 10 (`list_recent_data_objects`): `GET /v7.0/type/{dataObjectType}/recent/list`
+- Tool 11 (`get_available_products`): `GET /v7.0/type/gwopportunity/availableproducts`
+
+**Type & Metadata (7, 8):** Object type discovery and full field/relationship schema.
+
+**User & Group (14, 15):** User listing and self-profile.
+
+**Tags (17, 18):** System-wide tag listing and per-object tag assignment.
 
 ## Deployment
 
