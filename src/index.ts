@@ -114,7 +114,7 @@ function errorResult(err: unknown) {
 function buildServer(): McpServer {
 const server = new McpServer({
   name: "cas-genesisworld-mcp",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 /* ------------------------------------------------------------------ *
@@ -301,7 +301,340 @@ server.registerTool(
 );
 
 /* ------------------------------------------------------------------ *
- * Tool 4: list_available_data_object_types                          *
+ * Tool 4: list_data_objects                                          *
+ * GET /v7.0/type/{dataObjectType}/list                              *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_data_objects",
+  {
+    title: "List Data Objects (genesisWorld)",
+    description:
+      "Read-only list of data objects of a given type, with optional " +
+      "filtering, field selection, and pagination. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/list.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe(
+          "Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."
+        ),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects matching the search term. " +
+          "This uses the user's configured search fields defined in the " +
+          "Desktop Client."
+        ),
+      fields: z
+        .string()
+        .optional()
+        .describe(
+          "Comma-separated list of fields to return (API param 'fields'). " +
+          "Omit to return the default field set."
+        ),
+      orderBy: z
+        .string()
+        .optional()
+        .describe(
+          "Order specification (API param 'order-by'). " +
+          "Format: comma-separated field names, optionally " +
+          "with ' ASC' or ' DESC' suffix, e.g. 'KEYWORD ASC,UPDATETIMESTAMP DESC'."
+        ),
+      teamFilter: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list based on permission owners (API param 'team-filter')."
+        ),
+      updatedAfter: z
+        .string()
+        .optional()
+        .describe(
+          "Filters by UPDATETIMESTAMP (API param 'updated-after'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      insertedAfter: z
+        .string()
+        .optional()
+        .describe(
+          "Filters by INSERTTIMESTAMP (API param 'inserted-after'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      intervalStart: z
+        .string()
+        .optional()
+        .describe(
+          "Used together with intervalEnd. Filters data objects with " +
+          "START_DT and END_DT for an interval (API param 'interval-start'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      intervalEnd: z
+        .string()
+        .optional()
+        .describe(
+          "Used together with intervalStart. Filters data objects with " +
+          "START_DT and END_DT for an interval (API param 'interval-end'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      linkedToType: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects which are linked to the " +
+          "given type (API param 'linked-to-type')."
+        ),
+      linkedTo: z
+        .string()
+        .optional()
+        .describe(
+          "Requires linkedToType. A comma-separated string of GGUIDs " +
+          "(API param 'linked-to')."
+        ),
+      linkedToAttributes: z
+        .string()
+        .optional()
+        .describe(
+          "Requires linkedTo and linkedToType. Filters the links " +
+          "additionally for the attributes (API param 'linked-to-attributes')."
+        ),
+      includeDeactivated: z
+        .boolean()
+        .optional()
+        .describe(
+          "If true, deactivated addresses will be returned for ADDRESS " +
+          "views (API param 'include-deactivated')."
+        ),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}/list`;
+      const text = await apiGet(path, {
+        search: args.search,
+        fields: args.fields,
+        "order-by": args.orderBy,
+        "team-filter": args.teamFilter,
+        "updated-after": args.updatedAfter,
+        "inserted-after": args.insertedAfter,
+        "interval-start": args.intervalStart,
+        "interval-end": args.intervalEnd,
+        "linked-to-type": args.linkedToType,
+        "linked-to": args.linkedTo,
+        "linked-to-attributes": args.linkedToAttributes,
+        "include-deactivated": args.includeDeactivated,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 5: list_views                                                 *
+ * GET /v7.0/type/{dataObjectType}/view/list                          *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_views",
+  {
+    title: "List Views (genesisWorld)",
+    description:
+      "Read-only list of views available for a given data object type. " +
+      "Returns view metadata including view IDs that can be used with " +
+      "list_data_objects_by_view. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/view/list.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe(
+          "Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."
+        ),
+      viewKind: z
+        .string()
+        .optional()
+        .describe(
+          "Optional filter for view kind (API param 'view-kind')."
+        ),
+      includeDisplaySettings: z
+        .boolean()
+        .optional()
+        .describe(
+          "Include display mode settings of a view (API param 'include-display-settings')."
+        ),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}/view/list`;
+      const text = await apiGet(path, {
+        "view-kind": args.viewKind,
+        "include-display-settings": args.includeDisplaySettings,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 6: list_data_objects_by_view                                  *
+ * GET /v7.0/type/{dataObjectType}/view/{viewID}/list                 *
+ * ------------------------------------------------------------------ */
+server.registerTool(
+  "list_data_objects_by_view",
+  {
+    title: "List Data Objects by View (genesisWorld)",
+    description:
+      "Read-only list of data objects of a given type, filtered through " +
+      "a specific view. Supports the powerful 'whereString' parameter " +
+      "for field-level filtering. Maps to " +
+      "GET /v7.0/type/{dataObjectType}/view/{viewID}/list.",
+    inputSchema: {
+      dataObjectType: z
+        .string()
+        .describe(
+          "Object/table type (path segment), e.g. 'ADDRESS', 'GWOPPORTUNITY'."
+        ),
+      viewId: z
+        .string()
+        .describe(
+          "View ID (path segment). Use list_views to discover available IDs."
+        ),
+      whereString: z
+        .string()
+        .optional()
+        .describe(
+          "Field-level filter expression (API param 'where-string'). " +
+          "Format depends on the genesisWorld API; common syntax is " +
+          "FIELDNAME='value' or FIELDNAME LIKE 'pattern'."
+        ),
+      search: z
+        .string()
+        .optional()
+        .describe(
+          "Filters the list for data objects matching the search term. " +
+          "This uses the user's configured search fields defined in the " +
+          "Desktop Client."
+        ),
+      fields: z
+        .string()
+        .optional()
+        .describe(
+          "Comma-separated list of fields to return (API param 'fields'). " +
+          "Omit to return the default field set."
+        ),
+      orderBy: z
+        .string()
+        .optional()
+        .describe(
+          "Order specification (API param 'order-by'). " +
+          "Format: comma-separated field names, optionally " +
+          "with ' ASC' or ' DESC' suffix."
+        ),
+      updatedAfter: z
+        .string()
+        .optional()
+        .describe(
+          "Filters by UPDATETIMESTAMP (API param 'updated-after'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      insertedAfter: z
+        .string()
+        .optional()
+        .describe(
+          "Filters by INSERTTIMESTAMP (API param 'inserted-after'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      intervalStart: z
+        .string()
+        .optional()
+        .describe(
+          "Used together with intervalEnd. Filters data objects with " +
+          "START_DT and END_DT for an interval (API param 'interval-start'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      intervalEnd: z
+        .string()
+        .optional()
+        .describe(
+          "Used together with intervalStart. Filters data objects with " +
+          "START_DT and END_DT for an interval (API param 'interval-end'). " +
+          "Needs a datetime in ISO-format."
+        ),
+      includeDeactivated: z
+        .boolean()
+        .optional()
+        .describe(
+          "If true, deactivated addresses will be returned for ADDRESS " +
+          "views (API param 'include-deactivated')."
+        ),
+      page: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page number. The first page is index 1."),
+      entriesPerPage: z
+        .number()
+        .int()
+        .optional()
+        .describe("Page size (API param 'entries-per-page')."),
+    },
+  },
+  async (args) => {
+    try {
+      const path =
+        `/v7.0/type/${encodeURIComponent(args.dataObjectType)}` +
+        `/view/${encodeURIComponent(args.viewId)}/list`;
+      const text = await apiGet(path, {
+        "where-string": args.whereString,
+        search: args.search,
+        fields: args.fields,
+        "order-by": args.orderBy,
+        "updated-after": args.updatedAfter,
+        "inserted-after": args.insertedAfter,
+        "interval-start": args.intervalStart,
+        "interval-end": args.intervalEnd,
+        "include-deactivated": args.includeDeactivated,
+        page: args.page,
+        "entries-per-page": args.entriesPerPage,
+      });
+      return jsonResult(text);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+/* ------------------------------------------------------------------ *
+ * Tool 7: list_available_data_object_types                          *
  * GET /v7.0/user/self/dataobjecttypepermission/list                 *
  * ------------------------------------------------------------------ */
 server.registerTool(
@@ -330,7 +663,7 @@ server.registerTool(
 );
 
 /* ------------------------------------------------------------------ *
- * Tool 5: get_data_object_types_metadata                            *
+ * Tool 8: get_data_object_types_metadata                            *
  * GET /v7.0/metadata                                                *
  * ------------------------------------------------------------------ */
 server.registerTool(

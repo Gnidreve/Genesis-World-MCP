@@ -34,8 +34,17 @@ The upstream API has 209 operations in total (133 GET / 46 POST / 17 DELETE /
 | `smart_search`                     | GET  | `/v7.0/smartsearch`                                               | ✅        |
 | `get_data_object`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}`                  | ✅        |
 | `get_dossier`                      | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`     | ✅        |
+| `list_data_objects`                | GET  | `/v7.0/type/{dataObjectType}/list`                               | ✅        |
+| `list_views`                       | GET  | `/v7.0/type/{dataObjectType}/view/list`                          | ✅        |
+| `list_data_objects_by_view`        | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/list`                 | ✅        |
 | `list_available_data_object_types` | GET  | `/v7.0/user/self/dataobjecttypepermission/list`                 | ✅        |
 | `get_data_object_types_metadata`   | GET  | `/v7.0/metadata`                                                 | ✅        |
+
+Tools 4–6 are **list/filter tools**: `list_data_objects` provides paginated listing of data
+objects with search, time-range, and link-based filtering; `list_views` discovers available
+views for a type; `list_data_objects_by_view` additionally supports a `whereString` parameter
+for field-level filtering (syntax depends on the genesisWorld API version — try
+`FIELDNAME='value'` or `FIELDNAME LIKE 'pattern'`).
 
 The last two are **type-discovery** tools: `list_available_data_object_types`
 returns the types the authenticated user may access (lean, permission-scoped,
