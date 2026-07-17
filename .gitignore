@@ -11,3 +11,15 @@ dist/
 
 # Secret credentials (not committed)
 .gitsecret/
+
+# Local build artifacts and binaries (leftover from old sandbox agent setup)
+*.wav
+*.bin
+*.so
+*.so.*
+whisper-cli
+opusdec
+.npm/
+.ssh/
+media/
+
