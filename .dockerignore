@@ -10,3 +10,19 @@ Dockerfile
 .env
 .DS_Store
 dist/
+
+# Sandbox agent leftovers (not needed at runtime)
+.npm/
+.ssh/
+media/
+*.wav
+*.bin
+*.so
+*.so.*
+whisper-cli
+opusdec
+
+# Dev & test (not needed in production image)
+vite*
+*.test.ts
+__tests__/
