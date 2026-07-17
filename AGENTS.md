@@ -91,10 +91,22 @@ DOCKER_HOST="unix:///var/lib/sysdocker/.colima/default/docker.sock" \
 ## How to add another (GET) tool
 
 1. Find the `GET` operation in `swagger.json` (`paths` → path → `get`).
-2. Copy the `server.registerTool(...)` pattern from `buildServer()` in
-   `src/index.ts`. Note: all tool registration lives inside `buildServer()`.
-3. Map path params to `encodeURIComponent`-ed path segments.
+2. Confirm it is read-only. If it is not a `GET`, **stop** — out of scope.
+3. Create `src/tools/<name>.ts` with a `register<Name>` function that calls
+   `server.registerTool(...)`:
+   - Map path params to `encodeURIComponent`-ed path segments.
+   - Map query params 1:1, keeping the API's original param names
+     (e.g. `object-type`, `include-permissions`) on the wire while exposing
+     camelCase argument names to the tool caller.
+   - Return `jsonResult(text)`; never post-process or "interpret" the payload
+     in this phase.
 4. Keep handlers wrapped in `try/catch` returning `errorResult(err)`.
+5. Import and call the `register<Name>(server)` function in `src/index.ts`.
+6. Add a corresponding entry to the `TOOL_CONFIGS` array in
+   `src/tools/all-tools.test.ts` — one object provides tool name, sample args,
+   expected path, and expected query params. Four tests are generated
+   automatically.
+7. Run `npm test` to verify.
 
 ## Configuration (runtime, not hardcoded)
 
@@ -116,19 +128,6 @@ example** and is never baked into the code.
 (`authorizationCode`) and an API-key product key; those are not the chosen path
 here. `X-CAS-PRODUCT-KEY` is supported optionally because some installations
 require it alongside Basic — it is sent only when the env var is present.
-
-## How to add another (GET) tool
-
-1. Find the `GET` operation in `swagger.json` (`paths` → path → `get`).
-2. Confirm it is read-only. If it is not a `GET`, **stop** — out of scope.
-3. Add a `server.registerTool(...)` call inside `buildServer()` in `src/index.ts`:
-   - Map path params to `encodeURIComponent`-ed path segments.
-   - Map query params 1:1, keeping the API's original param names
-     (e.g. `object-type`, `include-permissions`) on the wire while exposing
-     camelCase argument names to the tool caller.
-   - Return `jsonResult(text)`; never post-process or "interpret" the payload
-     in this phase.
-4. Keep handlers wrapped in `try/catch` returning `errorResult(err)`.
 
 ## Known spec quirks (NSwag-generated)
 

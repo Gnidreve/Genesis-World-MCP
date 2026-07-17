@@ -3,22 +3,37 @@
 An [MCP](https://modelcontextprotocol.io) server exposing a **read-only
 (GET-only)** subset of the **CAS genesisWorld REST Webservice v7.0**.
 
-Phase 1 ships five read-only tools, each mapping to a single GET call:
-
-| Tool                               | Endpoint                                                          |
-| ---------------------------------- | ----------------------------------------------------------------- |
-| `smart_search`                     | `GET /v7.0/smartsearch`                                           |
-| `get_data_object`                  | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}`              |
-| `get_dossier`                      | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full` |
-| `list_available_data_object_types` | `GET /v7.0/user/self/dataobjecttypepermission/list`             |
-| `get_data_object_types_metadata`   | `GET /v7.0/metadata`                                             |
-
-The two `*_types*` tools exist for **type discovery** — they let an agent find
-the valid `dataObjectType` / `object-type(s)` values used by the other tools.
-
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Scope rules live in [`AGENTS.md`](./AGENTS.md). **Only GET endpoints
 are integrated.**
+
+## Tools (20)
+
+| # | Tool                               | Endpoint                                                          |
+|---|------------------------------------|-------------------------------------------------------------------|
+| 1 | `smart_search`                     | `GET /v7.0/smartsearch`                                           |
+| 2 | `get_data_object`                  | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}`               |
+| 3 | `get_dossier`                      | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`  |
+| 4 | `list_data_objects`                | `GET /v7.0/type/{dataObjectType}/list`                            |
+| 5 | `list_views`                       | `GET /v7.0/type/{dataObjectType}/view/list`                       |
+| 6 | `list_data_objects_by_view`        | `GET /v7.0/type/{dataObjectType}/view/{viewID}/list`              |
+| 7 | `list_available_data_object_types` | `GET /v7.0/user/self/dataobjecttypepermission/list`               |
+| 8 | `get_data_object_types_metadata`   | `GET /v7.0/metadata`                                              |
+| 9 | `list_links`                       | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list`     |
+|10 | `list_recent_data_objects`         | `GET /v7.0/type/{dataObjectType}/recent/list`                     |
+|11 | `get_available_products`           | `GET /v7.0/type/gwopportunity/availableproducts`                  |
+|12 | `get_data_object_count`            | `GET /v7.0/type/{dataObjectType}/count`                           |
+|13 | `get_primary_link_parents`         | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents`|
+|14 | `list_users`                       | `GET /v7.0/user/list`                                             |
+|15 | `get_user_self`                    | `GET /v7.0/user/self`                                             |
+|16 | `get_view`                         | `GET /v7.0/type/{dataObjectType}/view/{viewID}`                   |
+|17 | `list_tags`                        | `GET /v7.0/tags`                                                  |
+|18 | `get_object_tags`                  | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags`          |
+|19 | `get_full_data_objects`            | `GET /v7.0/type/{dataObjectType}/full`                            |
+|20 | `list_data_objects_by_view_full`   | `GET /v7.0/type/{dataObjectType}/view/{viewID}/full`              |
+
+See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
+and categories.
 
 ## Requirements
 
@@ -34,7 +49,7 @@ npm install      # also runs the build via the "prepare" script
 npm run build
 ```
 
-This compiles `src/index.ts` → `dist/index.js`.
+This compiles `src/` → `dist/`.
 
 ## Configuration
 
@@ -90,6 +105,44 @@ instead:
   "command": "node",
   "args": ["/absolute/path/to/cas-genesisworld-mcp/dist/index.js"]
 }
+```
+
+## Tests
+
+Tests use [Vitest](https://vitest.dev) and mock the upstream API entirely
+(no real genesisWorld connection needed).
+
+```bash
+# Run once (CI)
+npm test
+
+# Watch mode during development
+npm run test:watch
+```
+
+**Coverage:** all 20 tool registrations are tested declaratively via
+`src/tools/all-tools.test.ts`. Adding a new tool means:
+1. Create the tool file in `src/tools/<name>.ts`
+2. Add one entry to the `TOOL_CONFIGS` array in `all-tools.test.ts`
+3. Import + register in `src/index.ts`
+
+Each tool gets 4 tests: registration name, endpoint path + params,
+success response, and error handling.
+
+## Source layout
+
+```
+src/
+├── index.ts          # Entry point: server setup, main()
+├── lib.ts            # Shared: apiGet, jsonResult, errorResult
+├── lib.test.ts       # Lib unit tests
+├── __tests__/
+│   └── test-utils.ts # Mock helpers for tool tests
+└── tools/
+    ├── all-tools.test.ts    # Declarative master test (all 20 tools)
+    ├── smart_search.ts      # One file per tool
+    ├── get_data_object.ts
+    └── …
 ```
 
 ## Notes
