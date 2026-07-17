@@ -13,7 +13,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock only apiGet; keep real jsonResult / errorResult
 vi.mock("../lib.js", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return { ...actual, apiGet: vi.fn() };
 });
 
