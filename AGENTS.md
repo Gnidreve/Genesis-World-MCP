@@ -72,20 +72,39 @@ The upstream API has 209 operations in total (133 GET / 46 POST / 17 DELETE /
 
 **Tags (17, 18):** System-wide tag listing and per-object tag assignment.
 
-## Deployment
+## Deployment (Docker HTTP)
 
-This server runs as a Docker container managed by root's `mcp-swarm` at
-`/var/root/.mcp-swarm/docker-compose.yml`. Credentials are stored exclusively
-in `/var/root/.mcp-swarm/.env` (root-only). The container exposes a
-**Streamable HTTP** endpoint at `http://127.0.0.1:8084/mcp` — no auth required
-from the MCP client since secrets never leave the container.
+The server runs as a standalone Docker container exposing a **Streamable HTTP**
+endpoint. Build and run locally:
 
-To rebuild after code changes:
 ```bash
-cd /var/root/.mcp-swarm
-DOCKER_HOST="unix:///var/lib/sysdocker/.colima/default/docker.sock" \
-  docker-compose build cas-genesisworld-mcp && \
-  docker-compose up -d cas-genesisworld-mcp
+# Build the image
+docker build -t cas-genesisworld-mcp .
+
+# Run with HTTP transport (default in the Docker image)
+docker run -d \
+  --name cas-genesisworld-mcp \
+  -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://your-genesisworld-server/genesisrest.svc" \
+  -e GENESISWORLD_USERNAME="your-user" \
+  -e GENESISWORLD_PASSWORD="your-password" \
+  cas-genesisworld-mcp
+```
+
+The container starts on port **3000** internally (exposed as 8084) and
+listens on `GET /mcp` for Streamable HTTP. No auth on the MCP endpoint
+itself — credentials stay inside the container as environment variables.
+
+Rebuild after code changes:
+```bash
+docker build -t cas-genesisworld-mcp . && \
+  docker stop cas-genesisworld-mcp && \
+  docker rm cas-genesisworld-mcp && \
+  docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+    -e GENESISWORLD_BASE_URL="..." \
+    -e GENESISWORLD_USERNAME="..." \
+    -e GENESISWORLD_PASSWORD="..." \
+    cas-genesisworld-mcp
 ```
 
 ## How to add another (GET) tool

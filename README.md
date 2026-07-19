@@ -63,9 +63,25 @@ is only an example — set your own base URL.
 | `GENESISWORLD_PASSWORD`    | yes      | `mypassword`                              |
 | `GENESISWORLD_PRODUCT_KEY` | no       | sent as `X-CAS-PRODUCT-KEY` if provided   |
 
-## Run (npx)
+## Run
 
-After building, the server is runnable as a local bin via `npx`:
+### Option 1: Docker (recommended for production)
+
+```bash
+# Build the image
+docker build -t cas-genesisworld-mcp .
+
+# Run with Streamable HTTP on port 8084
+docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+  -e GENESISWORLD_USERNAME="myuser" \
+  -e GENESISWORLD_PASSWORD="mypassword" \
+  cas-genesisworld-mcp
+
+# The MCP endpoint is now at http://localhost:8084/mcp
+```
+
+### Option 2: npx (development)
 
 ```bash
 GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
@@ -77,9 +93,33 @@ npx .
 (`npx .` resolves the `bin` entry in `package.json`. `node dist/index.js`
 works identically.)
 
+### Option 3: HTTP mode via env var
+
+```bash
+MCP_TRANSPORT=http MCP_PORT=3000 MCP_HOST=0.0.0.0 \
+GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+GENESISWORLD_USERNAME="myuser" \
+GENESISWORLD_PASSWORD="mypassword" \
+node dist/index.js
+```
+
 ## MCP client configuration
 
-Point your MCP client at the built server. Example client config block:
+Point your MCP client at the server. You have two options:
+
+### HTTP (recommended for remote/production)
+
+```json
+{
+  "mcpServers": {
+    "cas-genesisworld": {
+      "url": "http://localhost:8084/mcp"
+    }
+  }
+}
+```
+
+### stdio / npx (local development)
 
 ```json
 {
