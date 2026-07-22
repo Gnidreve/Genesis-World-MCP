@@ -89,17 +89,17 @@ read-only mode, and has declarative tests (path, verb, body mapping, error path)
 | P3.4 | Flow `complete_task` / `update_task_status` (typed field mapping) | dropped | P2.2 | — (spec defines no task field vocabulary; hardcoding status field names would break per installation. Covered by `update_data_object` + `genesisworld://metadata/task`) |
 | P3.5 | Tool `get_ticket_service_agreements` (task/ticket extension) | done | — | `GET /v7.0/type/task/ticket/serviceagreements` |
 
-## P4 — Native stage 1b: Adressen (address) `next`
+## P4 — Native stage 1b: Adressen (address) `done`
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P4.1 | Flow `find_contact`: smart search + phone-number search fallback → deduplicated compact hit list | planned | P1.1 | `GET /v7.0/smartsearch`, `GET /v7.0/type/address/search/phonenumber` |
-| P4.2 | Flow `contact_360`: address + collection dossier + tags + primary links in one call | planned | P1.1 | `GET /v7.0/type/address/{gguid}`, `…/collectiondossier/full`, `…/tags` |
-| P4.3 | Flow `create_address_safe`: duplicate check first; on hits return candidates instead of creating; else create | planned | P2.1 | `POST /v7.0/type/address/duplicates`, `POST /v7.0/type/address` |
-| P4.4 | Tools: `get_vcard`, `get_salutation`, `format_phone_number` | planned | — | `GET …/vcard`, `POST /v7.0/type/address/salutation`, `POST …/formatphonenumber` |
-| P4.5 | Contact person activate/deactivate | planned | P1.2 | `POST …/contactperson/activate`, `…/deactivate` |
+| P4.1 | Flow `find_contact`: smart search + phone-number search fallback → deduplicated compact hit list | done | P1.1 | `GET /v7.0/smartsearch`, `GET /v7.0/type/address/search/phonenumber` |
+| P4.2 | Flow `contact_360`: address + collection dossier + tags + primary links in one call | done | P1.1 | `GET /v7.0/type/address/{gguid}`, `…/collectiondossier/full`, `…/tags` |
+| P4.3 | Flow `create_address_safe`: duplicate check first; on hits return candidates instead of creating; else create | done | P2.1 | `POST /v7.0/type/address/duplicates`, `POST /v7.0/type/address` |
+| P4.4 | Tools: `get_vcard`, `get_salutation`, `format_phone_number` | done | — | `GET …/vcard`, `POST /v7.0/type/address/salutation`, `POST …/formatphonenumber` |
+| P4.5 | Contact person activate/deactivate | done | P1.2 | `POST …/contactperson/activate`, `…/deactivate` |
 
-## P5 — Native stage 2: Termine (appointment) + Dokumente `planned`
+## P5 — Native stage 2: Termine (appointment) + Dokumente `next`
 
 Deliberately after stage 1 (maintainer decision, 2026-07-22).
 

@@ -7,11 +7,11 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 36 tools — 25 read / 11 write (create/update/delete,
-links, tags, notes, dossier, recycle bin), including the first native-type
-**flows** for Aufgaben/tasks, gated by a `--read-only` launch mode.
-**Next:** address flows, then Termine — see the machine-readable plan in
-[`ROADMAP.md`](./ROADMAP.md).
+**Current state:** 43 tools — 30 read / 13 write, including 6 native-type
+**flows** for Aufgaben/tasks and Adressen/contacts (duplicate-safe address
+creation, 360° contact view, combined search), gated by a `--read-only`
+launch mode. **Next:** Termine/appointments + documents — see the
+machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
@@ -36,9 +36,9 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (36)
+## Tools (43)
 
-### Flows (3)
+### Flows (6)
 
 One tool call, several upstream calls bundled server-side:
 
@@ -47,8 +47,11 @@ One tool call, several upstream calls bundled server-side:
 | `my_open_tasks` | read  | Current user + their task list (due window, saved view, or full-text filter) in one call |
 | `task_overview` | read  | Task record + links + tags, fetched in parallel |
 | `create_task`   | write | Create a task and optionally link it to another object (e.g. an address) |
+| `find_contact`  | read  | Address search by name and/or phone number, in parallel |
+| `contact_360`   | read  | Address + collection dossier + tags + links, fetched in parallel |
+| `create_address_safe` | write | Duplicate check first — creates only when no candidates are found (`force` overrides) |
 
-### Read (22)
+### Read (26)
 
 | # | Tool                               | Endpoint                                                          |
 |---|------------------------------------|-------------------------------------------------------------------|
@@ -75,8 +78,11 @@ One tool call, several upstream calls bundled server-side:
 |20 | `list_data_objects_by_view_full`   | `GET /v7.0/type/{dataObjectType}/view/{viewID}/full`              |
 |21 | `get_data_objects_bulk`            | `POST /v7.0/type/{dataObjectType}/records` (read despite POST)    |
 |21a| `get_ticket_service_agreements`    | `GET /v7.0/type/task/ticket/serviceagreements`                    |
+|21b| `get_vcard`                        | `GET /v7.0/type/address/{dataObjectGGUID}/vcard`                  |
+|21c| `get_salutation`                   | `POST /v7.0/type/address/salutation` (read despite POST)          |
+|21d| `format_phone_number`              | `POST /v7.0/type/address/formatphonenumber` (read despite POST)   |
 
-### Write (10 — hidden in read-only mode, plus the `create_task` flow)
+### Write (11 — hidden in read-only mode, plus the write flows)
 
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|
@@ -90,6 +96,7 @@ One tool call, several upstream calls bundled server-side:
 |29 | `append_notes`          | `POST /v7.0/type/{t}/{gguid}/notes/{fieldName}`                      |
 |30 | `create_dossier_entry`  | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier`         |
 |31 | `delete_dossier_entry`  | `DELETE /v7.0/type/{t}/{gguid}/dossier/{dossierEntryGGUID}`          |
+|32 | `set_contact_persons_active` | `POST /v7.0/type/address/{gguid}/contactperson/activate\|deactivate` |
 
 See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
 and categories.

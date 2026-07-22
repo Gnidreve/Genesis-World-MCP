@@ -55,6 +55,10 @@ see no create/update/delete tools, that is why, not an error.
   window via \`dueWithinDays\`, saved view via \`viewId\`).
 - \`task_overview\`: one task + its links + tags, one call.
 - \`create_task\`: create a task and link it to a target object, one call.
+- \`find_contact\`: full-text and/or phone-number address search, one call.
+- \`contact_360\`: address + collection dossier + tags + links, one call.
+- \`create_address_safe\`: duplicate check first; creates only when no
+  candidates are found (or with \`force: true\`).
 
 ## Navigation patterns (cheapest path first)
 

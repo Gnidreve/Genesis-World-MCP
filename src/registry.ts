@@ -46,6 +46,13 @@ import { tool as getTicketServiceAgreements } from "./tools/get_ticket_service_a
 import { tool as myOpenTasks } from "./flows/my_open_tasks.js";
 import { tool as taskOverview } from "./flows/task_overview.js";
 import { tool as createTask } from "./flows/create_task.js";
+import { tool as getVcard } from "./tools/get_vcard.js";
+import { tool as getSalutation } from "./tools/get_salutation.js";
+import { tool as formatPhoneNumber } from "./tools/format_phone_number.js";
+import { tool as setContactPersonsActive } from "./tools/set_contact_persons_active.js";
+import { tool as findContact } from "./flows/find_contact.js";
+import { tool as contact360 } from "./flows/contact_360.js";
+import { tool as createAddressSafe } from "./flows/create_address_safe.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -84,6 +91,13 @@ export const REGISTRY: ToolDef[] = [
   myOpenTasks,
   taskOverview,
   createTask,
+  getVcard,
+  getSalutation,
+  formatPhoneNumber,
+  setContactPersonsActive,
+  findContact,
+  contact360,
+  createAddressSafe,
 ];
 
 export interface RegisterOptions {

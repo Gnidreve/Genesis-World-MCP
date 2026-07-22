@@ -56,6 +56,10 @@ import { registerDeleteDossierEntry } from "./delete_dossier_entry.js";
 import { registerGetDataObjectsBulk } from "./get_data_objects_bulk.js";
 import { registerRestoreDataObject } from "./restore_data_object.js";
 import { registerGetTicketServiceAgreements } from "./get_ticket_service_agreements.js";
+import { registerGetVcard } from "./get_vcard.js";
+import { registerGetSalutation } from "./get_salutation.js";
+import { registerFormatPhoneNumber } from "./format_phone_number.js";
+import { registerSetContactPersonsActive } from "./set_contact_persons_active.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -601,6 +605,50 @@ const TOOL_CONFIGS: ToolTestCase[] = [
       page: 1,
       "entries-per-page": 10,
     },
+  },
+  {
+    name: "get_vcard",
+    register: (s) => registerGetVcard(s as any),
+    path: "/v7.0/type/address/addr-9/vcard",
+    sampleArgs: { dataObjectGGUID: "addr-9" },
+    expectedParams: {},
+  },
+  {
+    name: "get_salutation",
+    register: (s) => registerGetSalutation(s as any),
+    method: "POST",
+    path: "/v7.0/type/address/salutation",
+    sampleArgs: {
+      name: "Meier",
+      christianName: "Anna",
+      letter: true,
+      preferredLanguage: "de",
+    },
+    expectedParams: {},
+    expectedBody: {
+      name: "Meier",
+      christianName: "Anna",
+      letter: true,
+      preferredLanguage: "de",
+    },
+  },
+  {
+    name: "format_phone_number",
+    register: (s) => registerFormatPhoneNumber(s as any),
+    method: "POST",
+    path: "/v7.0/type/address/formatphonenumber",
+    sampleArgs: { phoneNumber: "0721 1234", countryCode: "DE" },
+    expectedParams: {},
+    expectedBody: { phoneNumber: "0721 1234", countryCode: "DE" },
+  },
+  {
+    name: "set_contact_persons_active",
+    register: (s) => registerSetContactPersonsActive(s as any),
+    method: "POST",
+    path: "/v7.0/type/address/comp-1/contactperson/activate",
+    sampleArgs: { dataObjectGGUID: "comp-1", active: true },
+    expectedParams: {},
+    expectedBody: NO_BODY,
   },
 ];
 

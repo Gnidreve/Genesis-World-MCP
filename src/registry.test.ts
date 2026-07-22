@@ -10,12 +10,15 @@ import { createMockServer } from "./__tests__/test-utils.js";
 import type { ToolDef } from "./types.js";
 
 describe("registry", () => {
-  it("contains 36 entries (25 read / 11 write; 3 of them flows)", () => {
-    expect(REGISTRY).toHaveLength(36);
-    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(25);
-    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(11);
+  it("contains 43 entries (30 read / 13 write; 6 of them flows)", () => {
+    expect(REGISTRY).toHaveLength(43);
+    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(30);
+    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(13);
     expect(REGISTRY.filter((t) => t.kind === "flow").map((t) => t.name).sort()).toEqual([
+      "contact_360",
+      "create_address_safe",
       "create_task",
+      "find_contact",
       "my_open_tasks",
       "task_overview",
     ]);

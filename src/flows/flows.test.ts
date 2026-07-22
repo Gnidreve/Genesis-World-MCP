@@ -14,6 +14,9 @@ import { apiGet, apiSend } from "../lib.js";
 import { registerMyOpenTasks } from "./my_open_tasks.js";
 import { registerTaskOverview } from "./task_overview.js";
 import { registerCreateTask, extractGGUID } from "./create_task.js";
+import { registerFindContact } from "./find_contact.js";
+import { registerContact360 } from "./contact_360.js";
+import { registerCreateAddressSafe, looksLikeHits } from "./create_address_safe.js";
 import { createMockServer } from "../__tests__/test-utils.js";
 import type { MockServer } from "../__tests__/test-utils.js";
 
@@ -150,6 +153,129 @@ describe("create_task", () => {
     expect(apiSend).toHaveBeenCalledTimes(1);
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.warning).toMatch(/link was NOT created/i);
+  });
+});
+
+describe("find_contact", () => {
+  beforeEach(() => registerFindContact(server as any));
+
+  it("rejects calls without query and phoneNumber", async () => {
+    const result = await server.callHandler("find_contact", {});
+    expect(result.isError).toBe(true);
+    expect(apiGet).not.toHaveBeenCalled();
+  });
+
+  it("runs text and phone search in parallel when both are given", async () => {
+    const result = await server.callHandler("find_contact", {
+      query: "Acme",
+      phoneNumber: "+49 721 1234",
+      defaultCountryCallingCode: 49,
+    });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/smartsearch", {
+      query: "Acme",
+      "object-type": "address",
+      page: undefined,
+      "entries-per-page": 25,
+    });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/address/search/phonenumber", {
+      phoneNumber: "+49 721 1234",
+      defaultCountryCallingCode: 49,
+      fields: undefined,
+      page: undefined,
+      "entries-per-page": 25,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.textHits).toEqual({ ok: 1 });
+    expect(parsed.phoneHits).toEqual({ ok: 1 });
+  });
+
+  it("skips the phone search when only a query is given", async () => {
+    await server.callHandler("find_contact", { query: "Acme" });
+    expect(apiGet).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("contact_360", () => {
+  beforeEach(() => registerContact360(server as any));
+
+  it("fetches address, dossier, tags, and links in one call", async () => {
+    const result = await server.callHandler("contact_360", {
+      dataObjectGGUID: "a-1",
+      dossierObjectTypes: "TASK,APPOINTMENT",
+      includeCorporateGroup: true,
+    });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/address/a-1", { fields: undefined });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/address/a-1/collectiondossier/full", {
+      "object-types": "TASK,APPOINTMENT",
+      "include-corporate-group": true,
+      "entries-per-page": 25,
+    });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/address/a-1/tags", {});
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/address/a-1/link/list", {});
+    const parsed = JSON.parse(result.content[0].text);
+    expect(Object.keys(parsed).sort()).toEqual(["address", "dossier", "links", "tags"]);
+  });
+
+  it("honors the include switches", async () => {
+    await server.callHandler("contact_360", {
+      dataObjectGGUID: "a-2",
+      includeDossier: false,
+      includeTags: false,
+      includeLinks: false,
+    });
+    expect(apiGet).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("create_address_safe", () => {
+  beforeEach(() => registerCreateAddressSafe(server as any));
+
+  it("does NOT create when the duplicate check finds candidates", async () => {
+    vi.mocked(apiSend).mockResolvedValueOnce('{"duplicates":[{"GGUID":"dup-1"}]}');
+    const result = await server.callHandler("create_address_safe", {
+      fields: { NAME: "Meier" },
+    });
+    expect(apiSend).toHaveBeenCalledTimes(1);
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.created).toBe(false);
+    expect(parsed.duplicates).toEqual({ duplicates: [{ GGUID: "dup-1" }] });
+  });
+
+  it("creates when the duplicate check comes back empty", async () => {
+    vi.mocked(apiSend).mockResolvedValueOnce('{"duplicates":[]}');
+    const result = await server.callHandler("create_address_safe", {
+      fields: { NAME: "Meier" },
+    });
+    expect(apiSend).toHaveBeenCalledTimes(2);
+    expect(apiSend).toHaveBeenLastCalledWith(
+      "POST",
+      "/v7.0/type/address",
+      { "tag-as-recently-used": false },
+      { fields: { NAME: "Meier" } }
+    );
+    expect(JSON.parse(result.content[0].text).created).toBe(true);
+  });
+
+  it("creates despite candidates when force=true", async () => {
+    vi.mocked(apiSend).mockResolvedValueOnce('{"duplicates":[{"GGUID":"dup-1"}]}');
+    const result = await server.callHandler("create_address_safe", {
+      fields: { NAME: "Meier" },
+      force: true,
+    });
+    expect(apiSend).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(result.content[0].text).created).toBe(true);
+  });
+});
+
+describe("looksLikeHits", () => {
+  it("classifies arrays, objects with arrays, and junk conservatively", () => {
+    expect(looksLikeHits([])).toBe(false);
+    expect(looksLikeHits([1])).toBe(true);
+    expect(looksLikeHits({ duplicates: [] })).toBe(false);
+    expect(looksLikeHits({ duplicates: [1] })).toBe(true);
+    expect(looksLikeHits({})).toBe(false);
+    expect(looksLikeHits({ note: "x" })).toBe(true);
+    expect(looksLikeHits("not json")).toBe("unknown");
   });
 });
 
