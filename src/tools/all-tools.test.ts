@@ -60,6 +60,20 @@ import { registerGetVcard } from "./get_vcard.js";
 import { registerGetSalutation } from "./get_salutation.js";
 import { registerFormatPhoneNumber } from "./format_phone_number.js";
 import { registerSetContactPersonsActive } from "./set_contact_persons_active.js";
+import { registerCheckAppointmentConflicts } from "./check_appointment_conflicts.js";
+import { registerGetParticipantSummary } from "./get_participant_summary.js";
+import { registerListAppointmentParticipants } from "./list_appointment_participants.js";
+import { registerAddAppointmentParticipant } from "./add_appointment_participant.js";
+import { registerRemoveAppointmentParticipant } from "./remove_appointment_participant.js";
+import { registerSetRecurrence } from "./set_recurrence.js";
+import { registerDeleteRecurrence } from "./delete_recurrence.js";
+import { registerSetAlarm } from "./set_alarm.js";
+import { registerDeleteAlarm } from "./delete_alarm.js";
+import { registerGetDocumentFile } from "./get_document_file.js";
+import { registerListDocumentVersions } from "./list_document_versions.js";
+import { registerListEmailAttachments } from "./list_email_attachments.js";
+import { registerGetEmailAttachment } from "./get_email_attachment.js";
+import { registerGetEmailFile } from "./get_email_file.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -649,6 +663,132 @@ const TOOL_CONFIGS: ToolTestCase[] = [
     sampleArgs: { dataObjectGGUID: "comp-1", active: true },
     expectedParams: {},
     expectedBody: NO_BODY,
+  },
+  {
+    name: "check_appointment_conflicts",
+    register: (s) => registerCheckAppointmentConflicts(s as any),
+    path: "/v7.0/type/appointment/conflicts",
+    sampleArgs: {
+      userOids: ["oid-1", "oid-2"],
+      intervalStart: "2026-08-01T09:00:00Z",
+      intervalEnd: "2026-08-01T10:00:00Z",
+      excludeGGUID: "app-1",
+      fields: "KEYWORD",
+    },
+    expectedParams: {
+      "user-oids": ["oid-1", "oid-2"],
+      "interval-start": "2026-08-01T09:00:00Z",
+      "interval-end": "2026-08-01T10:00:00Z",
+      gguid: "app-1",
+      fields: "KEYWORD",
+    },
+  },
+  {
+    name: "get_participant_summary",
+    register: (s) => registerGetParticipantSummary(s as any),
+    path: "/v7.0/type/appointment/app-2/participant/summary",
+    sampleArgs: { dataObjectGGUID: "app-2" },
+    expectedParams: {},
+  },
+  {
+    name: "list_appointment_participants",
+    register: (s) => registerListAppointmentParticipants(s as any),
+    path: "/v7.0/type/appointment/app-3/participant/full",
+    sampleArgs: { dataObjectGGUID: "app-3", domainGuid: "d-1", page: 1, entriesPerPage: 10 },
+    expectedParams: { "domain-guid": "d-1", page: 1, "entries-per-page": 10 },
+  },
+  {
+    name: "add_appointment_participant",
+    register: (s) => registerAddAppointmentParticipant(s as any),
+    method: "POST",
+    path: "/v7.0/type/appointment/app-4/participant",
+    sampleArgs: { dataObjectGGUID: "app-4", participantGGUID: "user-1" },
+    expectedParams: { gguid: "user-1" },
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "remove_appointment_participant",
+    register: (s) => registerRemoveAppointmentParticipant(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/appointment/app-5/participant/user-2",
+    sampleArgs: { dataObjectGGUID: "app-5", participantGGUID: "user-2" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "set_recurrence",
+    register: (s) => registerSetRecurrence(s as any),
+    method: "POST",
+    path: "/v7.0/type/appointment/recurrence",
+    sampleArgs: { dataObjectType: "appointment", event: { exceptionDates: [] } },
+    expectedParams: {},
+    expectedBody: { exceptionDates: [] },
+  },
+  {
+    name: "delete_recurrence",
+    register: (s) => registerDeleteRecurrence(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/appointment/recurrence/per-1",
+    sampleArgs: { dataObjectType: "appointment", periodGuid: "per-1" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "set_alarm",
+    register: (s) => registerSetAlarm(s as any),
+    method: "PUT",
+    path: "/v7.0/type/appointment/app-6/alarm/self",
+    sampleArgs: {
+      dataObjectType: "appointment",
+      dataObjectGGUID: "app-6",
+      alarm: "2026-08-01T08:45:00Z",
+    },
+    expectedParams: {},
+    expectedBody: { alarm: "2026-08-01T08:45:00Z" },
+  },
+  {
+    name: "delete_alarm",
+    register: (s) => registerDeleteAlarm(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/appointment/app-7/alarm/self",
+    sampleArgs: { dataObjectType: "appointment", dataObjectGGUID: "app-7" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "get_document_file",
+    register: (s) => registerGetDocumentFile(s as any),
+    path: "/v7.0/type/document/doc-1/file",
+    sampleArgs: { dataObjectGGUID: "doc-1", version: 3 },
+    expectedParams: { version: 3, "read-only": true },
+  },
+  {
+    name: "list_document_versions",
+    register: (s) => registerListDocumentVersions(s as any),
+    path: "/v7.0/type/document/doc-2/file/version/list",
+    sampleArgs: { dataObjectGGUID: "doc-2" },
+    expectedParams: {},
+  },
+  {
+    name: "list_email_attachments",
+    register: (s) => registerListEmailAttachments(s as any),
+    path: "/v7.0/type/emailstore/mail-1/attachment/list",
+    sampleArgs: { dataObjectGGUID: "mail-1" },
+    expectedParams: {},
+  },
+  {
+    name: "get_email_attachment",
+    register: (s) => registerGetEmailAttachment(s as any),
+    path: "/v7.0/type/emailstore/mail-2/attachment/att-1",
+    sampleArgs: { dataObjectGGUID: "mail-2", attachmentId: "att-1" },
+    expectedParams: {},
+  },
+  {
+    name: "get_email_file",
+    register: (s) => registerGetEmailFile(s as any),
+    path: "/v7.0/type/emailstore/mail-3/file",
+    sampleArgs: { dataObjectGGUID: "mail-3", htmlFilter: 1, includeAttachments: true },
+    expectedParams: { "html-filter": 1, "include-attachments": true },
   },
 ];
 

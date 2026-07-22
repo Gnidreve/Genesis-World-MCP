@@ -59,6 +59,8 @@ see no create/update/delete tools, that is why, not an error.
 - \`contact_360\`: address + collection dossier + tags + links, one call.
 - \`create_address_safe\`: duplicate check first; creates only when no
   candidates are found (or with \`force: true\`).
+- \`create_appointment_safe\`: optional conflict check first, then create,
+  then add participants — one call.
 
 ## Navigation patterns (cheapest path first)
 

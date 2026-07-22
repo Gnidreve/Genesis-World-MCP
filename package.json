@@ -1,6 +1,6 @@
 {
   "name": "cas-genesisworld-mcp",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "MCP server for the CAS genesisWorld REST Webservice v7.0 — tools, flows, and resources with an optional read-only mode.",
   "type": "module",
   "bin": {

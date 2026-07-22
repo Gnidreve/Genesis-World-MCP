@@ -53,6 +53,21 @@ import { tool as setContactPersonsActive } from "./tools/set_contact_persons_act
 import { tool as findContact } from "./flows/find_contact.js";
 import { tool as contact360 } from "./flows/contact_360.js";
 import { tool as createAddressSafe } from "./flows/create_address_safe.js";
+import { tool as checkAppointmentConflicts } from "./tools/check_appointment_conflicts.js";
+import { tool as getParticipantSummary } from "./tools/get_participant_summary.js";
+import { tool as listAppointmentParticipants } from "./tools/list_appointment_participants.js";
+import { tool as addAppointmentParticipant } from "./tools/add_appointment_participant.js";
+import { tool as removeAppointmentParticipant } from "./tools/remove_appointment_participant.js";
+import { tool as setRecurrence } from "./tools/set_recurrence.js";
+import { tool as deleteRecurrence } from "./tools/delete_recurrence.js";
+import { tool as setAlarm } from "./tools/set_alarm.js";
+import { tool as deleteAlarm } from "./tools/delete_alarm.js";
+import { tool as getDocumentFile } from "./tools/get_document_file.js";
+import { tool as listDocumentVersions } from "./tools/list_document_versions.js";
+import { tool as listEmailAttachments } from "./tools/list_email_attachments.js";
+import { tool as getEmailAttachment } from "./tools/get_email_attachment.js";
+import { tool as getEmailFile } from "./tools/get_email_file.js";
+import { tool as createAppointmentSafe } from "./flows/create_appointment_safe.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -98,6 +113,21 @@ export const REGISTRY: ToolDef[] = [
   findContact,
   contact360,
   createAddressSafe,
+  checkAppointmentConflicts,
+  getParticipantSummary,
+  listAppointmentParticipants,
+  addAppointmentParticipant,
+  removeAppointmentParticipant,
+  setRecurrence,
+  deleteRecurrence,
+  setAlarm,
+  deleteAlarm,
+  getDocumentFile,
+  listDocumentVersions,
+  listEmailAttachments,
+  getEmailAttachment,
+  getEmailFile,
+  createAppointmentSafe,
 ];
 
 export interface RegisterOptions {

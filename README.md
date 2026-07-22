@@ -7,11 +7,11 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 43 tools — 30 read / 13 write, including 6 native-type
-**flows** for Aufgaben/tasks and Adressen/contacts (duplicate-safe address
-creation, 360° contact view, combined search), gated by a `--read-only`
-launch mode. **Next:** Termine/appointments + documents — see the
-machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
+**Current state:** 58 tools — 38 read / 20 write, including 7 native-type
+**flows** for Aufgaben/tasks, Adressen/contacts, and Termine/appointments
+(duplicate-safe address creation, conflict-safe appointment creation, 360°
+contact view), plus document/email reads — gated by a `--read-only` launch
+mode. See the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
@@ -36,9 +36,9 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (43)
+## Tools (58)
 
-### Flows (6)
+### Flows (7)
 
 One tool call, several upstream calls bundled server-side:
 
@@ -50,8 +50,9 @@ One tool call, several upstream calls bundled server-side:
 | `find_contact`  | read  | Address search by name and/or phone number, in parallel |
 | `contact_360`   | read  | Address + collection dossier + tags + links, fetched in parallel |
 | `create_address_safe` | write | Duplicate check first — creates only when no candidates are found (`force` overrides) |
+| `create_appointment_safe` | write | Optional conflict check → create → add participants, in one call |
 
-### Read (26)
+### Read (34)
 
 | # | Tool                               | Endpoint                                                          |
 |---|------------------------------------|-------------------------------------------------------------------|
@@ -81,8 +82,16 @@ One tool call, several upstream calls bundled server-side:
 |21b| `get_vcard`                        | `GET /v7.0/type/address/{dataObjectGGUID}/vcard`                  |
 |21c| `get_salutation`                   | `POST /v7.0/type/address/salutation` (read despite POST)          |
 |21d| `format_phone_number`              | `POST /v7.0/type/address/formatphonenumber` (read despite POST)   |
+|21e| `check_appointment_conflicts`      | `GET /v7.0/type/appointment/conflicts`                            |
+|21f| `get_participant_summary`          | `GET /v7.0/type/appointment/{gguid}/participant/summary`          |
+|21g| `list_appointment_participants`    | `GET /v7.0/type/appointment/{gguid}/participant/full`             |
+|21h| `get_document_file`                | `GET /v7.0/type/document/{gguid}/file` (never locks)              |
+|21i| `list_document_versions`           | `GET /v7.0/type/document/{gguid}/file/version/list`               |
+|21j| `list_email_attachments`           | `GET /v7.0/type/emailstore/{gguid}/attachment/list`               |
+|21k| `get_email_attachment`             | `GET /v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`     |
+|21l| `get_email_file`                   | `GET /v7.0/type/emailstore/{gguid}/file`                          |
 
-### Write (11 — hidden in read-only mode, plus the write flows)
+### Write (17 — hidden in read-only mode, plus the write flows)
 
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|
@@ -97,6 +106,12 @@ One tool call, several upstream calls bundled server-side:
 |30 | `create_dossier_entry`  | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier`         |
 |31 | `delete_dossier_entry`  | `DELETE /v7.0/type/{t}/{gguid}/dossier/{dossierEntryGGUID}`          |
 |32 | `set_contact_persons_active` | `POST /v7.0/type/address/{gguid}/contactperson/activate\|deactivate` |
+|33 | `add_appointment_participant`    | `POST /v7.0/type/appointment/{gguid}/participant`                |
+|34 | `remove_appointment_participant` | `DELETE /v7.0/type/appointment/{gguid}/participant/{participantGGUID}` |
+|35 | `set_recurrence`        | `POST /v7.0/type/{t}/recurrence` / `PUT …/recurrence/{periodGuid}`   |
+|36 | `delete_recurrence`     | `DELETE /v7.0/type/{t}/recurrence/{periodGuid}`                      |
+|37 | `set_alarm`             | `PUT /v7.0/type/{t}/{gguid}/alarm/self`                              |
+|38 | `delete_alarm`          | `DELETE /v7.0/type/{t}/{gguid}/alarm/self`                           |
 
 See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
 and categories.

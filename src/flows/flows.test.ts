@@ -17,6 +17,7 @@ import { registerCreateTask, extractGGUID } from "./create_task.js";
 import { registerFindContact } from "./find_contact.js";
 import { registerContact360 } from "./contact_360.js";
 import { registerCreateAddressSafe, looksLikeHits } from "./create_address_safe.js";
+import { registerCreateAppointmentSafe } from "./create_appointment_safe.js";
 import { createMockServer } from "../__tests__/test-utils.js";
 import type { MockServer } from "../__tests__/test-utils.js";
 
@@ -264,6 +265,82 @@ describe("create_address_safe", () => {
     });
     expect(apiSend).toHaveBeenCalledTimes(2);
     expect(JSON.parse(result.content[0].text).created).toBe(true);
+  });
+});
+
+describe("create_appointment_safe", () => {
+  beforeEach(() => registerCreateAppointmentSafe(server as any));
+
+  it("creates directly when no conflict check is requested", async () => {
+    const result = await server.callHandler("create_appointment_safe", {
+      fields: { KEYWORD: "Meeting" },
+    });
+    expect(apiGet).not.toHaveBeenCalled();
+    expect(apiSend).toHaveBeenCalledWith(
+      "POST",
+      "/v7.0/type/appointment",
+      { "tag-as-recently-used": false },
+      { fields: { KEYWORD: "Meeting" } }
+    );
+    expect(JSON.parse(result.content[0].text).created).toBe(true);
+  });
+
+  it("refuses to create when conflicts are found", async () => {
+    vi.mocked(apiGet).mockResolvedValue('{"conflicts":[{"GGUID":"c-1"}]}');
+    const result = await server.callHandler("create_appointment_safe", {
+      fields: { KEYWORD: "Meeting" },
+      userOids: ["oid-1"],
+      intervalStart: "2026-08-01T09:00:00Z",
+      intervalEnd: "2026-08-01T10:00:00Z",
+    });
+    expect(apiGet).toHaveBeenCalledWith("/v7.0/type/appointment/conflicts", {
+      "user-oids": ["oid-1"],
+      "interval-start": "2026-08-01T09:00:00Z",
+      "interval-end": "2026-08-01T10:00:00Z",
+    });
+    expect(apiSend).not.toHaveBeenCalled();
+    expect(JSON.parse(result.content[0].text).created).toBe(false);
+  });
+
+  it("requires the interval when userOids are given", async () => {
+    const result = await server.callHandler("create_appointment_safe", {
+      fields: { KEYWORD: "Meeting" },
+      userOids: ["oid-1"],
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("creates and adds participants when the check is clean", async () => {
+    vi.mocked(apiGet).mockResolvedValue('{"conflicts":[]}');
+    vi.mocked(apiSend)
+      .mockResolvedValueOnce('{"fields":{"GGUID":"app-new"}}')
+      .mockResolvedValue('{"ok":1}');
+    const result = await server.callHandler("create_appointment_safe", {
+      fields: { KEYWORD: "Meeting" },
+      userOids: ["oid-1"],
+      intervalStart: "2026-08-01T09:00:00Z",
+      intervalEnd: "2026-08-01T10:00:00Z",
+      participantGGUIDs: ["p-1", "p-2"],
+    });
+    expect(apiSend).toHaveBeenCalledTimes(3);
+    expect(apiSend).toHaveBeenCalledWith(
+      "POST",
+      "/v7.0/type/appointment/app-new/participant",
+      { gguid: "p-1" }
+    );
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.created).toBe(true);
+    expect(Object.keys(parsed.participants)).toEqual(["p-1", "p-2"]);
+  });
+
+  it("warns when participants cannot be added for lack of a GGUID", async () => {
+    vi.mocked(apiSend).mockResolvedValueOnce('{"no":"gguid"}');
+    const result = await server.callHandler("create_appointment_safe", {
+      fields: { KEYWORD: "Meeting" },
+      participantGGUIDs: ["p-1"],
+    });
+    expect(apiSend).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(result.content[0].text).warning).toMatch(/NOT added/);
   });
 });
 

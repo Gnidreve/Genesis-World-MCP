@@ -99,19 +99,19 @@ read-only mode, and has declarative tests (path, verb, body mapping, error path)
 | P4.4 | Tools: `get_vcard`, `get_salutation`, `format_phone_number` | done | — | `GET …/vcard`, `POST /v7.0/type/address/salutation`, `POST …/formatphonenumber` |
 | P4.5 | Contact person activate/deactivate | done | P1.2 | `POST …/contactperson/activate`, `…/deactivate` |
 
-## P5 — Native stage 2: Termine (appointment) + Dokumente `next`
+## P5 — Native stage 2: Termine (appointment) + Dokumente `done`
 
 Deliberately after stage 1 (maintainer decision, 2026-07-22).
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P5.1 | Flow `check_conflicts_and_create_appointment`: conflict check → create → add participants | planned | P2.1 | `GET /v7.0/type/appointment/conflicts`, `POST /v7.0/type/appointment`, `POST …/participant` |
-| P5.2 | Participant tools (summary, full, add/remove) | planned | P1.2 | 5× `…/appointment/{gguid}/participant…` |
-| P5.3 | Recurrence support (create/update/delete recurrent events) | planned | P2.1 | `POST/PUT/DELETE /v7.0/type/{t}/recurrence…` |
-| P5.4 | Alarm tools (set/delete own alarm) | planned | P1.2 | `PUT/DELETE /v7.0/type/{t}/{gguid}/alarm/self` |
-| P5.5 | Document/email read tools: file fetch, versions, attachments | planned | — | `GET /v7.0/type/document/{gguid}/file…`, `GET /v7.0/type/emailstore/{gguid}/attachment…` |
+| P5.1 | Flow `check_conflicts_and_create_appointment`: conflict check → create → add participants | done | P2.1 | `GET /v7.0/type/appointment/conflicts`, `POST /v7.0/type/appointment`, `POST …/participant` |
+| P5.2 | Participant tools (summary, full, add/remove; count & single-get skipped — no agent value) | done | P1.2 | 5× `…/appointment/{gguid}/participant…` |
+| P5.3 | Recurrence support (create/update/delete recurrent events) | done | P2.1 | `POST/PUT/DELETE /v7.0/type/{t}/recurrence…` |
+| P5.4 | Alarm tools (set/delete own alarm) | done | P1.2 | `PUT/DELETE /v7.0/type/{t}/{gguid}/alarm/self` |
+| P5.5 | Document/email read tools: file fetch, versions, attachments | done | — | `GET /v7.0/type/document/{gguid}/file…`, `GET /v7.0/type/emailstore/{gguid}/attachment…` |
 
-## P6 — Hardening & efficiency `planned`
+## P6 — Hardening & efficiency `next`
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|

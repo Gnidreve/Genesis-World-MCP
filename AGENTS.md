@@ -11,10 +11,11 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P4 done** (registry, modes,
+stable item IDs). Current state: **P0–P5 done** (registry, modes,
 annotations, readme + metadata resources, generic write layer, task +
-address flows). 43 tools: 30 read / 13 write, 6 of them flows. **P5
-(appointments + documents) is the active work front.**
+address + appointment flows, document/email reads). 58 tools: 38 read /
+20 write, 7 of them flows. **P6 (hardening & efficiency) is the active
+work front.**
 
 ## Standing orders — READ FIRST
 
@@ -106,7 +107,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (43: 30 read / 13 write; 6 flows)
+## Currently implemented tools (58: 38 read / 20 write; 7 flows)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -136,6 +137,14 @@ src/
 | 21b| `get_vcard`                        | GET  | `/v7.0/type/address/{dataObjectGGUID}/vcard`                      |
 | 21c| `get_salutation`                   | POST | `/v7.0/type/address/salutation` (**read** despite POST)           |
 | 21d| `format_phone_number`              | POST | `/v7.0/type/address/formatphonenumber` (**read** despite POST)    |
+| 21e| `check_appointment_conflicts`      | GET  | `/v7.0/type/appointment/conflicts`                                |
+| 21f| `get_participant_summary`          | GET  | `/v7.0/type/appointment/{gguid}/participant/summary`              |
+| 21g| `list_appointment_participants`    | GET  | `/v7.0/type/appointment/{gguid}/participant/full`                 |
+| 21h| `get_document_file`                | GET  | `/v7.0/type/document/{gguid}/file` (always `read-only=true`, never locks) |
+| 21i| `list_document_versions`           | GET  | `/v7.0/type/document/{gguid}/file/version/list`                   |
+| 21j| `list_email_attachments`           | GET  | `/v7.0/type/emailstore/{gguid}/attachment/list`                   |
+| 21k| `get_email_attachment`             | GET  | `/v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`         |
+| 21l| `get_email_file`                   | GET  | `/v7.0/type/emailstore/{gguid}/file`                              |
 
 ### Flows (`kind: "flow"` — one tool, several upstream calls)
 
@@ -148,8 +157,13 @@ src/
 | `contact_360`   | read  | address + collection dossier + tags + links, in parallel |
 | `create_address_safe` | write | `POST /type/address/duplicates` first; creates only when no candidates found (`force: true` overrides). Unparseable duplicate responses count as hits — conservative by design |
 
-Also new (write, atomic): `set_contact_persons_active` —
-`POST /type/address/{gguid}/contactperson/activate|deactivate`.
+| `create_appointment_safe` | write | optional `GET /type/appointment/conflicts` gate (skipped without `userOids`, `force: true` overrides) → `POST /type/appointment` → one `POST …/participant` per GGUID |
+
+Also new (write, atomic): `set_contact_persons_active`
+(`POST /type/address/{gguid}/contactperson/activate|deactivate`),
+`add_appointment_participant`, `remove_appointment_participant`,
+`set_recurrence` (POST create / PUT update in one tool),
+`delete_recurrence`, `set_alarm`, `delete_alarm`.
 
 Flow rules: flows never hide destructive steps (a flow that writes is
 `mode: "write"`); sub-results are embedded as parsed JSON in one combined
