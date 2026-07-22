@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListUsers(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerListUsers(server: McpServer): void {
         "Read-only list of all users with optional pagination. Useful to " +
         "resolve PERSONINCHARGE names to user details. Maps to " +
         "GET /v7.0/user/list.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         page: z
           .number()
@@ -54,3 +60,11 @@ export function registerListUsers(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_users",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/user/list"],
+  register: registerListUsers,
+};

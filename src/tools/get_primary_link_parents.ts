@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetPrimaryLinkParents(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerGetPrimaryLinkParents(server: McpServer): void {
         "object. For example, which ADDRESS is the primary account for an " +
         "opportunity. Maps to " +
         "GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -34,3 +40,11 @@ export function registerGetPrimaryLinkParents(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_primary_link_parents",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/primarylinkparents"],
+  register: registerGetPrimaryLinkParents,
+};

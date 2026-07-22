@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListViews(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerListViews(server: McpServer): void {
         "Returns view metadata including view IDs that can be used with " +
         "list_data_objects_by_view. Maps to " +
         "GET /v7.0/type/{dataObjectType}/view/list.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -59,3 +65,11 @@ export function registerListViews(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_views",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/view/list"],
+  register: registerListViews,
+};

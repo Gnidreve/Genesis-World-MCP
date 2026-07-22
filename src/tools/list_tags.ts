@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListTags(server: McpServer): void {
   server.registerTool(
@@ -10,6 +11,11 @@ export function registerListTags(server: McpServer): void {
       description:
         "Read-only list of all tags in the system, with optional " +
         "pagination. Maps to GET /v7.0/tags.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         page: z
           .number()
@@ -37,3 +43,11 @@ export function registerListTags(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_tags",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/tags"],
+  register: registerListTags,
+};

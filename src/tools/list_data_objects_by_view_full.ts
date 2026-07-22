@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListDataObjectsByViewFull(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerListDataObjectsByViewFull(server: McpServer): void {
         "through a specific view, in full view (all fields). Supports " +
         "the 'whereString' parameter for field-level filtering. Maps to " +
         "GET /v7.0/type/{dataObjectType}/view/{viewID}/full.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -71,3 +77,11 @@ export function registerListDataObjectsByViewFull(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_data_objects_by_view_full",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/view/{viewID}/full"],
+  register: registerListDataObjectsByViewFull,
+};

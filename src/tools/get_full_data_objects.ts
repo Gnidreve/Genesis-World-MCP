@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetFullDataObjects(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerGetFullDataObjects(server: McpServer): void {
         "(all fields). Supports the same filters as list_data_objects but " +
         "returns the complete field set. Maps to " +
         "GET /v7.0/type/{dataObjectType}/full.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -60,3 +66,11 @@ export function registerGetFullDataObjects(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_full_data_objects",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/full"],
+  register: registerGetFullDataObjects,
+};

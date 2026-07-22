@@ -3,18 +3,34 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 20 read tools (factually read-only). **Direction:** a full
-read-write server with native-type flows (Aufgaben, Adressen, Termine, …),
-MCP resources, and a `--read-only` launch mode — see the machine-readable
-plan in [`ROADMAP.md`](./ROADMAP.md).
+**Current state:** 21 read tools (incl. the static `readme` orientation
+tool/resource), central tool registry, and a `--read-only` launch mode.
+**Direction:** a full read-write server with native-type flows (Aufgaben,
+Adressen, Termine, …) — see the machine-readable plan in
+[`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 
-## Tools (20)
+## Modes
+
+- **Default: read-write.** All registered tools are available. (Until write
+  tools land — ROADMAP P2 — the server is factually read-only either way.)
+- **Read-only:** start with the `--read-only` CLI flag or
+  `GENESISWORLD_READ_ONLY=true`. Tools classified as writing are then not
+  registered at all. Classification is semantic, not by HTTP verb.
+
+## Resources
+
+- `genesisworld://readme` — static orientation document (domain model,
+  navigation patterns, efficiency rules). Never changes during a session;
+  also available as the `readme` tool for clients without resource support.
+
+## Tools (21)
 
 | # | Tool                               | Endpoint                                                          |
 |---|------------------------------------|-------------------------------------------------------------------|
+| 0 | `readme`                           | server-local static orientation document                          |
 | 1 | `smart_search`                     | `GET /v7.0/smartsearch`                                           |
 | 2 | `get_data_object`                  | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}`               |
 | 3 | `get_dossier`                      | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`  |
@@ -66,6 +82,7 @@ is only an example — set your own base URL.
 | `GENESISWORLD_USERNAME`    | yes      | `myuser`                                  |
 | `GENESISWORLD_PASSWORD`    | yes      | `mypassword`                              |
 | `GENESISWORLD_PRODUCT_KEY` | no       | sent as `X-CAS-PRODUCT-KEY` if provided   |
+| `GENESISWORLD_READ_ONLY`   | no       | `true` = read-only mode (same as `--read-only`) |
 
 ## Run
 
@@ -164,26 +181,34 @@ npm test
 npm run test:watch
 ```
 
-**Coverage:** all 20 tool registrations are tested declaratively via
-`src/tools/all-tools.test.ts`. Adding a new tool means:
-1. Create the tool file in `src/tools/<name>.ts`
-2. Add one entry to the `TOOL_CONFIGS` array in `all-tools.test.ts`
-3. Import + register in `src/index.ts`
+**Coverage:** all API tool registrations are tested declaratively via
+`src/tools/all-tools.test.ts`; `src/registry.test.ts` covers the registry,
+read-only filtering, annotations, and the `readme` tool/resource. Adding a
+new tool means:
+1. Create the tool file in `src/tools/<name>.ts` (exports `register<Name>` +
+   `tool: ToolDef`)
+2. Add the entry to `REGISTRY` in `src/registry.ts`
+3. Add one entry to the `TOOL_CONFIGS` array in `all-tools.test.ts`
 
-Each tool gets 4 tests: registration name, endpoint path + params,
+Each API tool gets 4 tests: registration name, endpoint path + params,
 success response, and error handling.
 
 ## Source layout
 
 ```
 src/
-├── index.ts          # Entry point: server setup, main()
+├── index.ts          # Entry point: transports, server build, main()
 ├── lib.ts            # Shared: apiGet, jsonResult, errorResult
 ├── lib.test.ts       # Lib unit tests
+├── types.ts          # ToolDef / ToolMode / ToolKind
+├── registry.ts       # Tool registry, isReadOnly, registerTools
+├── registry.test.ts  # Registry / mode / annotations / readme tests
+├── resources/
+│   └── readme.ts     # Static orientation tool + resource
 ├── __tests__/
-│   └── test-utils.ts # Mock helpers for tool tests
+│   └── test-utils.ts # Mock helpers (tools + resources)
 └── tools/
-    ├── all-tools.test.ts    # Declarative master test (all 20 tools)
+    ├── all-tools.test.ts    # Declarative master test (all API tools)
     ├── smart_search.ts      # One file per tool
     ├── get_data_object.ts
     └── …

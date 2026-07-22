@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetDataObjectTypesMetadata(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerGetDataObjectTypesMetadata(server: McpServer): void {
         "Read-only description and field schema for data object types, in a " +
         "single call. Useful to discover which fields a type exposes (e.g. to " +
         "fill the 'fields' argument of get_data_object). Maps to GET /v7.0/metadata.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         objectTypes: z
           .array(z.string())
@@ -37,3 +43,11 @@ export function registerGetDataObjectTypesMetadata(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_data_object_types_metadata",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/metadata"],
+  register: registerGetDataObjectTypesMetadata,
+};

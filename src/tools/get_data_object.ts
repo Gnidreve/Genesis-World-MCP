@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetDataObject(server: McpServer): void {
   server.registerTool(
@@ -10,6 +11,11 @@ export function registerGetDataObject(server: McpServer): void {
       description:
         "Read-only fetch of a single genesisWorld data object by type and " +
         "GGUID. Maps to GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -59,3 +65,11 @@ export function registerGetDataObject(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_data_object",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}"],
+  register: registerGetDataObject,
+};

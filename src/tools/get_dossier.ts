@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetDossier(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerGetDossier(server: McpServer): void {
         "Read-only fetch of all dossier entries (linked records / activities " +
         "/ documents) for a single data object. Maps to " +
         "GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -67,3 +73,11 @@ export function registerGetDossier(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_dossier",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full"],
+  register: registerGetDossier,
+};

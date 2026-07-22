@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerSmartSearch(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerSmartSearch(server: McpServer): void {
         "objects. Maps to GET /v7.0/smartsearch. Returns the raw " +
         "SearchResponse JSON (the response shape is marked 'undocumented' " +
         "in the OpenAPI spec, so results are passed through as-is).",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         query: z.string().optional().describe("The search term."),
         objectType: z
@@ -54,3 +60,11 @@ export function registerSmartSearch(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "smart_search",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/smartsearch"],
+  register: registerSmartSearch,
+};

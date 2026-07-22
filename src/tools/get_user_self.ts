@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetUserSelf(server: McpServer): void {
   server.registerTool(
@@ -10,6 +11,11 @@ export function registerGetUserSelf(server: McpServer): void {
       description:
         "Read-only fetch of the authenticated user's own profile and meta " +
         "data. Maps to GET /v7.0/user/self.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         fields: z
           .string()
@@ -30,3 +36,11 @@ export function registerGetUserSelf(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_user_self",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/user/self"],
+  register: registerGetUserSelf,
+};

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetDataObjectCount(server: McpServer): void {
   server.registerTool(
@@ -10,6 +11,11 @@ export function registerGetDataObjectCount(server: McpServer): void {
       description:
         "Read-only count of data objects of a given type, with optional " +
         "search filter. Maps to GET /v7.0/type/{dataObjectType}/count.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -36,3 +42,11 @@ export function registerGetDataObjectCount(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_data_object_count",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/count"],
+  register: registerGetDataObjectCount,
+};

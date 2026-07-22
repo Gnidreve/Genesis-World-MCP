@@ -11,8 +11,9 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0 done** (20 read tools), **P1 is the
-active work front**.
+stable item IDs). Current state: **P0 done** (20 read tools), **P1 mostly
+done** (registry, modes, annotations, readme tool/resource, instructions —
+P1.5 metadata resources still open).
 
 ## Standing orders — READ FIRST
 
@@ -31,7 +32,7 @@ active work front**.
 4. **Never document unimplemented features as existing.** README.md
    describes what `main` actually does; the future lives in ROADMAP.md.
 
-## Operating modes (target model — implemented in P1.2)
+## Operating modes (implemented — `isReadOnly` in `src/registry.ts`)
 
 - **Default: read-write.** All registered tools are available, including
   mutating ones (once they exist, P2+).
@@ -47,8 +48,9 @@ active work front**.
     tags, or otherwise mutates CRM data.
 - Every tool carries MCP annotations: `readOnlyHint`, `destructiveHint`
   (true for deletes), `idempotentHint`, `title`.
-- Until P1.2/P2 land, the server is factually read-only (only GET tools
-  exist); the old "GET-only by design" rule is **superseded** by this model.
+- Until P2 lands, the server is factually read-only in both modes (no write
+  tools exist yet); the old "GET-only by design" rule is **superseded** by
+  this model.
 
 ## Design pillars
 
@@ -68,39 +70,46 @@ active work front**.
    and never hide destructive steps: a flow that writes is `mode: "write"`.
 3. **Resources for slow-moving data.** Type metadata, view lists, user
    lists, and the static server overview are exposed as MCP resources so
-   agents don't burn tool calls on schema discovery (P1.4/P1.5).
-4. **The `readme` tool/resource** (P1.4) returns a static orientation
-   document (type system, native vs. custom, navigation patterns, flow
-   index). Its description explicitly says: *"Static — content never
-   changes during a session. Read once, do not re-read."* Served as both
-   resource `genesisworld://readme` and tool for resource-less clients.
+   agents don't burn tool calls on schema discovery (readme done; metadata
+   resources = P1.5, open).
+4. **The `readme` tool/resource** (implemented, `src/resources/readme.ts`)
+   returns a static orientation document (domain model, native vs. custom,
+   navigation patterns, efficiency rules). Its description explicitly says
+   content never changes during a session — read once, do not re-read.
+   Served byte-identical as resource `genesisworld://readme` and as a
+   `readme` tool for resource-less clients. The server also sets the MCP
+   `instructions` field pointing at it.
 
 ## Source layout & conventions
 
 ```
 src/
-├── index.ts        # entry: CLI flags, mode resolution, transports
+├── index.ts        # entry: transports, server build (instructions, version)
 ├── lib.ts          # shared HTTP layer: apiGet (apiSend in P2), results
-├── registry.ts     # (P1.1) central tool registry
+├── types.ts        # ToolDef / ToolMode / ToolKind
+├── registry.ts     # central tool registry + isReadOnly + registerTools
+├── registry.test.ts# registry, mode-filtering, annotations, readme tests
 ├── tools/          # atomic tools — one file, one upstream operation
 ├── flows/          # (P3+) composite flow tools
-├── resources/      # (P1.4+) MCP resources incl. readme content
-└── __tests__/      # shared test utils
+├── resources/      # MCP resources: readme.ts (static orientation)
+└── __tests__/      # shared test utils (mock server: tools + resources)
 ```
 
-- **Registry (P1.1):** every tool/flow module exports metadata
-  `{ name, mode: "read" | "write", kind: "atomic" | "flow", ops: string[] }`
-  plus its `register` function. `index.ts` iterates the registry and filters
-  by mode — no hand-maintained import list.
+- **Registry:** every tool/flow module exports
+  `tool: ToolDef = { name, mode, kind, ops, register }` (see
+  `src/types.ts`); `src/registry.ts` collects them into `REGISTRY` and
+  `registerTools(server, { readOnly })` filters by mode. `index.ts` has no
+  per-tool imports.
 - Atomic tools map params 1:1, keep the API's original wire param names
   (e.g. `object-type`) behind camelCase tool arguments, and return the raw
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (20 — all `mode: "read"`, atomic)
+## Currently implemented tools (21 — all `mode: "read"`, atomic)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
+| 0  | `readme`                           | —    | server-local static orientation (also resource `genesisworld://readme`) |
 | 1  | `smart_search`                     | GET  | `/v7.0/smartsearch`                                               |
 | 2  | `get_data_object`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}`                   |
 | 3  | `get_dossier`                      | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier/full`      |
@@ -148,13 +157,15 @@ src/
 3. Create `src/tools/<name>.ts` with a `register<Name>` function:
    - Map path params to `encodeURIComponent`-ed path segments.
    - Map query params 1:1, wire names preserved, camelCase tool args.
+   - Set `annotations` (`readOnlyHint` must match the declared `mode`).
    - Return `jsonResult(text)`; wrap handlers in `try/catch` returning
      `errorResult(err)`.
-4. Register: add to the registry (P1.1+) — or, until P1.1 lands, import and
-   call in `src/index.ts`.
+   - Export `tool: ToolDef` (name, mode, kind, ops, register).
+4. Add the entry to `REGISTRY` in `src/registry.ts`.
 5. Add one entry to `TOOL_CONFIGS` in `src/tools/all-tools.test.ts`
    (name, sample args, expected path, expected query params → 4 generated
-   tests). Run `npm test`.
+   tests). Run `npm test` — `registry.test.ts` also asserts entry counts,
+   annotation/mode consistency, and mode filtering.
 6. Update `README.md`, the tool table above, and the ROADMAP item status —
    same commit (standing order #1).
 
@@ -170,7 +181,7 @@ example** and is never baked into the code.
 | `GENESISWORLD_USERNAME`    | yes\*    | Basic Auth user                                  |
 | `GENESISWORLD_PASSWORD`    | yes\*    | Basic Auth password                              |
 | `GENESISWORLD_PRODUCT_KEY` | no       | Sent as `X-CAS-PRODUCT-KEY` header only if set   |
-| `GENESISWORLD_READ_ONLY`   | no       | `true` → read-only mode (P1.2; equiv. `--read-only`) |
+| `GENESISWORLD_READ_ONLY`   | no       | `true` → read-only mode (equivalent: `--read-only` CLI flag) |
 | `MCP_TRANSPORT`            | no       | `http` (default in Docker) or `stdio`            |
 | `MCP_HOST`                 | no       | Bind host for HTTP mode (default: `0.0.0.0`)     |
 | `MCP_PORT`                 | no       | Bind port for HTTP mode (default: `3000`)        |

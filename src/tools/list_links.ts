@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListLinks(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerListLinks(server: McpServer): void {
         "Read-only fetch of all links (relationships) for a data object. " +
         "Filters by object-type, gguid, attribute, and link-direction. " +
         "Maps to GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -54,3 +60,11 @@ export function registerListLinks(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_links",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link/list"],
+  register: registerListLinks,
+};

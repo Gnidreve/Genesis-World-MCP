@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListDataObjects(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerListDataObjects(server: McpServer): void {
         "Read-only list of data objects of a given type, with optional " +
         "filtering, field selection, and pagination. Maps to " +
         "GET /v7.0/type/{dataObjectType}/list.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -143,3 +149,11 @@ export function registerListDataObjects(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_data_objects",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/list"],
+  register: registerListDataObjects,
+};

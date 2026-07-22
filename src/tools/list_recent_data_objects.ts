@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListRecentDataObjects(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerListRecentDataObjects(server: McpServer): void {
         "Supports the 'whereString' parameter for field-level filtering " +
         "without needing a view. Maps to " +
         "GET /v7.0/type/{dataObjectType}/recent/list.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         dataObjectType: z
           .string()
@@ -44,3 +50,11 @@ export function registerListRecentDataObjects(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_recent_data_objects",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/{dataObjectType}/recent/list"],
+  register: registerListRecentDataObjects,
+};

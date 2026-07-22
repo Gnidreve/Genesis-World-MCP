@@ -15,7 +15,4 @@ dist/
 # Local build artifacts
 .npm/
 
-# Dev & test
-vite*
-*.test.ts
-__tests__/
+# (tests and vitest config are part of the repo — do not ignore them)

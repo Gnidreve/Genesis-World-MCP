@@ -1,20 +1,23 @@
 #!/usr/bin/env node
 /**
- * CAS genesisWorld REST Webservice — MCP server (read-only).
+ * CAS genesisWorld REST Webservice — MCP server.
  *
- * Exposes a curated, GET-only subset of the CAS genesisWorld REST API v7.0
- * as MCP tools. Tools live in individual files under src/tools/.
+ * Exposes the CAS genesisWorld REST API v7.0 as MCP tools, flows, and
+ * resources. Tools are collected in src/registry.ts and registered filtered
+ * by launch mode: with `--read-only` (or GENESISWORLD_READ_ONLY=true) only
+ * tools declared `mode: "read"` are registered.
  *
  * Configuration is provided at startup via environment variables:
  *   GENESISWORLD_BASE_URL   (required)  e.g. http://demo.cas.de/genesisrest.svc
  *   GENESISWORLD_USERNAME   (Basic Auth user)
  *   GENESISWORLD_PASSWORD   (Basic Auth password)
  *   GENESISWORLD_PRODUCT_KEY (optional) sent as X-CAS-PRODUCT-KEY if set
+ *   GENESISWORLD_READ_ONLY  (optional)  "true" = read-only mode
  *
  * The base URL is NOT hardcoded — the demo URL above is only an example.
  *
- * See AGENTS.md for the scope/classification rules and swagger.json (repo
- * root) for the full API surface used as cross-reference.
+ * See AGENTS.md for the scope/classification rules, ROADMAP.md for the
+ * project plan, and swagger.json (repo root) for the full API surface.
  */
 
 import { randomUUID } from "node:crypto";
@@ -25,68 +28,33 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { ensureConfig, getBaseUrl } from "./lib.js";
+import { isReadOnly, registerTools } from "./registry.js";
+import { README_URI } from "./resources/readme.js";
 
-// Tool registrations
-import { registerSmartSearch } from "./tools/smart_search.js";
-import { registerGetDataObject } from "./tools/get_data_object.js";
-import { registerGetDossier } from "./tools/get_dossier.js";
-import { registerListDataObjects } from "./tools/list_data_objects.js";
-import { registerListViews } from "./tools/list_views.js";
-import { registerListDataObjectsByView } from "./tools/list_data_objects_by_view.js";
-import { registerListAvailableDataObjectTypes } from "./tools/list_available_data_object_types.js";
-import { registerGetDataObjectTypesMetadata } from "./tools/get_data_object_types_metadata.js";
-import { registerListLinks } from "./tools/list_links.js";
-import { registerListRecentDataObjects } from "./tools/list_recent_data_objects.js";
-import { registerGetAvailableProducts } from "./tools/get_available_products.js";
-import { registerGetDataObjectCount } from "./tools/get_data_object_count.js";
-import { registerGetPrimaryLinkParents } from "./tools/get_primary_link_parents.js";
-import { registerListUsers } from "./tools/list_users.js";
-import { registerGetUserSelf } from "./tools/get_user_self.js";
-import { registerGetView } from "./tools/get_view.js";
-import { registerListTags } from "./tools/list_tags.js";
-import { registerGetObjectTags } from "./tools/get_object_tags.js";
-import { registerGetFullDataObjects } from "./tools/get_full_data_objects.js";
-import { registerListDataObjectsByViewFull } from "./tools/list_data_objects_by_view_full.js";
+const INSTRUCTIONS =
+  "CAS genesisWorld CRM access. Start by reading the static orientation " +
+  `resource ${README_URI} (or the 'readme' tool) once — it explains the ` +
+  "domain model (data-object types, GGUIDs, views, links, dossiers, tags) " +
+  "and the cheapest navigation patterns. In read-only mode, mutating tools " +
+  "are not registered.";
 
-function buildServer(): McpServer {
-  const server = new McpServer({
-    name: "cas-genesisworld-mcp",
-    version: "0.2.0",
-  });
-
-  registerSmartSearch(server);
-  registerGetDataObject(server);
-  registerGetDossier(server);
-  registerListDataObjects(server);
-  registerListViews(server);
-  registerListDataObjectsByView(server);
-  registerListAvailableDataObjectTypes(server);
-  registerGetDataObjectTypesMetadata(server);
-  registerListLinks(server);
-  registerListRecentDataObjects(server);
-  registerGetAvailableProducts(server);
-  registerGetDataObjectCount(server);
-  registerGetPrimaryLinkParents(server);
-  registerListUsers(server);
-  registerGetUserSelf(server);
-  registerGetView(server);
-  registerListTags(server);
-  registerGetObjectTags(server);
-  registerGetFullDataObjects(server);
-  registerListDataObjectsByViewFull(server);
-
+function buildServer(readOnly: boolean): McpServer {
+  const server = new McpServer(
+    { name: "cas-genesisworld-mcp", version: "0.3.0" },
+    { instructions: INSTRUCTIONS }
+  );
+  registerTools(server, { readOnly });
   return server;
-}
-
-function createServer(): McpServer {
-  return buildServer();
 }
 
 async function main() {
   ensureConfig();
 
   const BASE_URL = getBaseUrl();
+  const readOnly = isReadOnly();
+  const mode = readOnly ? "read-only" : "read-write";
   const transport = process.env.MCP_TRANSPORT ?? "stdio";
+  const createServer = () => buildServer(readOnly);
 
   if (transport === "http") {
     const host = process.env.MCP_HOST ?? "0.0.0.0";
@@ -157,11 +125,11 @@ async function main() {
       srv.once("error", reject);
     });
 
-    console.error(`[cas-genesisworld-mcp] running on http://${host}:${port}${endpoint} (base_url=${BASE_URL})`);
+    console.error(`[cas-genesisworld-mcp] running on http://${host}:${port}${endpoint} (mode=${mode}, base_url=${BASE_URL})`);
   } else {
     const t = new StdioServerTransport();
-    await buildServer().connect(t);
-    console.error(`[cas-genesisworld-mcp] running on stdio (base_url=${BASE_URL})`);
+    await createServer().connect(t);
+    console.error(`[cas-genesisworld-mcp] running on stdio (mode=${mode}, base_url=${BASE_URL})`);
   }
 }
 

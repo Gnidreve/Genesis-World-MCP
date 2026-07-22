@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerListAvailableDataObjectTypes(server: McpServer): void {
   server.registerTool(
@@ -12,6 +13,11 @@ export function registerListAvailableDataObjectTypes(server: McpServer): void {
         "discover valid values for the 'dataObjectType' / 'object-type(s)' " +
         "arguments of the other tools. Maps to " +
         "GET /v7.0/user/self/dataobjecttypepermission/list. Takes no parameters.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {},
     },
     async () => {
@@ -27,3 +33,11 @@ export function registerListAvailableDataObjectTypes(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "list_available_data_object_types",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/user/self/dataobjecttypepermission/list"],
+  register: registerListAvailableDataObjectTypes,
+};

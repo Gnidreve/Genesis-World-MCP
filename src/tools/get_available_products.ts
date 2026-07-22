@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { apiGet, jsonResult, errorResult } from "../lib.js";
+import type { ToolDef } from "../types.js";
 
 export function registerGetAvailableProducts(server: McpServer): void {
   server.registerTool(
@@ -11,6 +12,11 @@ export function registerGetAvailableProducts(server: McpServer): void {
         "Read-only list of available products for an opportunity. " +
         "Supports the 'whereString' parameter for field-level filtering. " +
         "Maps to GET /v7.0/type/gwopportunity/availableproducts.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       inputSchema: {
         whereString: z
           .string()
@@ -62,3 +68,11 @@ export function registerGetAvailableProducts(server: McpServer): void {
     }
   );
 }
+
+export const tool: ToolDef = {
+  name: "get_available_products",
+  mode: "read",
+  kind: "atomic",
+  ops: ["GET /v7.0/type/gwopportunity/availableproducts"],
+  register: registerGetAvailableProducts,
+};

@@ -48,12 +48,12 @@ Goal: the structural upgrade every later phase builds on.
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P1.1 | **Tool registry**: each tool module exports `{ name, mode: "read"\|"write", kind: "atomic"\|"flow", ops: string[] }`; `index.ts` registers from the registry instead of 20 hand-written imports | next | — | — |
-| P1.2 | **Launch modes**: CLI flag `--read-only` + env `GENESISWORLD_READ_ONLY=true` (either activates). In read-only mode, `mode: "write"` tools are not registered | next | P1.1 | — |
-| P1.3 | **MCP tool annotations** on every tool: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `title` | next | P1.1 | — |
-| P1.4 | **`readme` tool + resource**: static server overview (what this server is, type system, native vs. custom types, how to navigate, flow index). Description states: *"Static — content never changes during a session. Read once, do not re-read."* Served as resource `genesisworld://readme` and mirrored as a `readme` tool for resource-less clients | next | — | — |
-| P1.5 | **Metadata resources**: object types, field metadata, view lists as MCP resources (cached, TTL) so agents stop paying tool calls for schema discovery | planned | P1.1 | `GET /v7.0/metadata`, `GET /v7.0/user/self/dataobjecttypepermission/list`, `GET /v7.0/type/{t}/view/list` |
-| P1.6 | **Server `instructions`** field populated at init (compact navigation hints for clients that surface it) | planned | P1.4 | — |
+| P1.1 | **Tool registry**: each tool module exports `{ name, mode: "read"\|"write", kind: "atomic"\|"flow", ops: string[] }`; `index.ts` registers from the registry instead of 20 hand-written imports | done | — | — |
+| P1.2 | **Launch modes**: CLI flag `--read-only` + env `GENESISWORLD_READ_ONLY=true` (either activates). In read-only mode, `mode: "write"` tools are not registered | done | P1.1 | — |
+| P1.3 | **MCP tool annotations** on every tool: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `title` | done | P1.1 | — |
+| P1.4 | **`readme` tool + resource**: static server overview (what this server is, type system, native vs. custom types, how to navigate, flow index). Description states: *"Static — content never changes during a session. Read once, do not re-read."* Served as resource `genesisworld://readme` and mirrored as a `readme` tool for resource-less clients | done | — | — |
+| P1.5 | **Metadata resources**: object types, field metadata, view lists as MCP resources (cached, TTL) so agents stop paying tool calls for schema discovery | next | P1.1 | `GET /v7.0/metadata`, `GET /v7.0/user/self/dataobjecttypepermission/list`, `GET /v7.0/type/{t}/view/list` |
+| P1.6 | **Server `instructions`** field populated at init (compact navigation hints for clients that surface it) | done | P1.4 | — |
 
 **Acceptance P1:** server starts in both modes; read-only registers exactly the
 `mode: "read"` set; tests assert registry filtering; `readme` content served
