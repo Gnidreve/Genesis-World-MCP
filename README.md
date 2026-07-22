@@ -1,11 +1,15 @@
 # cas-genesisworld-mcp
 
-An [MCP](https://modelcontextprotocol.io) server exposing a **read-only
-(GET-only)** subset of the **CAS genesisWorld REST Webservice v7.0**.
+An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
+REST Webservice v7.0**.
+
+**Current state:** 20 read tools (factually read-only). **Direction:** a full
+read-write server with native-type flows (Aufgaben, Adressen, Termine, …),
+MCP resources, and a `--read-only` launch mode — see the machine-readable
+plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
-reference). Scope rules live in [`AGENTS.md`](./AGENTS.md). **Only GET endpoints
-are integrated.**
+reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 
 ## Tools (20)
 
