@@ -74,6 +74,9 @@ import { registerListDocumentVersions } from "./list_document_versions.js";
 import { registerListEmailAttachments } from "./list_email_attachments.js";
 import { registerGetEmailAttachment } from "./get_email_attachment.js";
 import { registerGetEmailFile } from "./get_email_file.js";
+import { registerListObjectPermissions } from "./list_object_permissions.js";
+import { registerSetObjectPermission } from "./set_object_permission.js";
+import { registerDeleteObjectPermission } from "./delete_object_permission.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -789,6 +792,36 @@ const TOOL_CONFIGS: ToolTestCase[] = [
     path: "/v7.0/type/emailstore/mail-3/file",
     sampleArgs: { dataObjectGGUID: "mail-3", htmlFilter: 1, includeAttachments: true },
     expectedParams: { "html-filter": 1, "include-attachments": true },
+  },
+  {
+    name: "list_object_permissions",
+    register: (s) => registerListObjectPermissions(s as any),
+    path: "/v7.0/type/ADDRESS/obj-1/permission/full",
+    sampleArgs: { dataObjectType: "ADDRESS", dataObjectGGUID: "obj-1", page: 1, entriesPerPage: 10 },
+    expectedParams: { page: 1, "entries-per-page": 10 },
+  },
+  {
+    name: "set_object_permission",
+    register: (s) => registerSetObjectPermission(s as any),
+    method: "POST",
+    path: "/v7.0/type/ADDRESS/obj-2/permission",
+    sampleArgs: {
+      dataObjectType: "ADDRESS",
+      dataObjectGGUID: "obj-2",
+      rightOwnerGGUID: "user-1",
+      accessRight: "READ",
+    },
+    expectedParams: { "right-owner-gguid": "user-1", "access-right": "READ" },
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "delete_object_permission",
+    register: (s) => registerDeleteObjectPermission(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/ADDRESS/obj-3/permission/perm-1",
+    sampleArgs: { dataObjectType: "ADDRESS", dataObjectGGUID: "obj-3", permissionGGUID: "perm-1" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
   },
 ];
 

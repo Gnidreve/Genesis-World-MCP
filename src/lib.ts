@@ -64,11 +64,22 @@ function buildUrl(path: string, query: QueryParams): URL {
   return url;
 }
 
+/** Log one upstream call to stderr unless GENESISWORLD_QUIET=true. */
+function logCall(method: string, url: URL, status: number, startedAt: number): void {
+  if ((process.env.GENESISWORLD_QUIET ?? "").toLowerCase() === "true") return;
+  const ms = Date.now() - startedAt;
+  console.error(
+    `[cas-genesisworld-mcp] ${method} ${url.pathname}${url.search} -> ${status} (${ms}ms)`
+  );
+}
+
 /** Perform a read-only GET against the genesisWorld REST API. */
 export async function apiGet(path: string, query: QueryParams): Promise<string> {
   const url = buildUrl(path, query);
+  const startedAt = Date.now();
   const res = await fetch(url, { method: "GET", headers: authHeaders() });
   const text = await res.text();
+  logCall("GET", url, res.status, startedAt);
 
   if (!res.ok) {
     throw new Error(
@@ -102,8 +113,10 @@ export async function apiSend(
     init.body = contentType === "application/json" ? JSON.stringify(body) : String(body);
   }
 
+  const startedAt = Date.now();
   const res = await fetch(url, init);
   const text = await res.text();
+  logCall(method, url, res.status, startedAt);
 
   if (!res.ok) {
     throw new Error(
@@ -114,6 +127,30 @@ export async function apiSend(
   return text || JSON.stringify({ ok: true, status: res.status });
 }
 
+/**
+ * Maximum characters a tool result may carry before being truncated
+ * (guards against runaway payloads eating the agent's context). Configured
+ * via GENESISWORLD_MAX_RESULT_CHARS; 0 disables truncation.
+ */
+export function maxResultChars(): number {
+  const raw = process.env.GENESISWORLD_MAX_RESULT_CHARS;
+  if (raw === undefined || raw === "") return 60_000;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 60_000;
+}
+
+/** Truncate an outgoing result body with an actionable hint appended. */
+export function capResult(body: string): string {
+  const cap = maxResultChars();
+  if (cap === 0 || body.length <= cap) return body;
+  return (
+    body.slice(0, cap) +
+    `\n... [truncated: response was ${body.length} chars, cap is ${cap}. ` +
+    "Narrow the result with 'fields', 'page'/'entriesPerPage', or a view; " +
+    "raise/disable the cap via GENESISWORLD_MAX_RESULT_CHARS.]"
+  );
+}
+
 export function jsonResult(text: string) {
   let body = text;
   try {
@@ -121,7 +158,7 @@ export function jsonResult(text: string) {
   } catch {
     // Not JSON — return the raw body unchanged.
   }
-  return { content: [{ type: "text" as const, text: body }] };
+  return { content: [{ type: "text" as const, text: capResult(body) }] };
 }
 
 export function errorResult(err: unknown) {

@@ -15,9 +15,13 @@ export function parseMaybe(text: string): unknown {
   }
 }
 
+import { capResult } from "../lib.js";
+
 /** Wrap a combined flow result object as an MCP text result. */
 export function flowResult(result: Record<string, unknown>) {
   return {
-    content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+    content: [
+      { type: "text" as const, text: capResult(JSON.stringify(result, null, 2)) },
+    ],
   };
 }

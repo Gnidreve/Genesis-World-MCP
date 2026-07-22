@@ -7,11 +7,12 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 58 tools — 38 read / 20 write, including 7 native-type
+**Current state:** 61 tools — 39 read / 22 write, including 7 native-type
 **flows** for Aufgaben/tasks, Adressen/contacts, and Termine/appointments
 (duplicate-safe address creation, conflict-safe appointment creation, 360°
-contact view), plus document/email reads — gated by a `--read-only` launch
-mode. See the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
+contact view), plus document/email reads and permission management — gated
+by a `--read-only` launch mode, with a configurable result cap and request
+logging. See the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
@@ -36,7 +37,7 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (58)
+## Tools (61)
 
 ### Flows (7)
 
@@ -52,7 +53,7 @@ One tool call, several upstream calls bundled server-side:
 | `create_address_safe` | write | Duplicate check first — creates only when no candidates are found (`force` overrides) |
 | `create_appointment_safe` | write | Optional conflict check → create → add participants, in one call |
 
-### Read (34)
+### Read (35)
 
 | # | Tool                               | Endpoint                                                          |
 |---|------------------------------------|-------------------------------------------------------------------|
@@ -90,8 +91,9 @@ One tool call, several upstream calls bundled server-side:
 |21j| `list_email_attachments`           | `GET /v7.0/type/emailstore/{gguid}/attachment/list`               |
 |21k| `get_email_attachment`             | `GET /v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`     |
 |21l| `get_email_file`                   | `GET /v7.0/type/emailstore/{gguid}/file`                          |
+|21m| `list_object_permissions`          | `GET /v7.0/type/{t}/{gguid}/permission/full`                      |
 
-### Write (17 — hidden in read-only mode, plus the write flows)
+### Write (19 — hidden in read-only mode, plus the write flows)
 
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|
@@ -112,6 +114,8 @@ One tool call, several upstream calls bundled server-side:
 |36 | `delete_recurrence`     | `DELETE /v7.0/type/{t}/recurrence/{periodGuid}`                      |
 |37 | `set_alarm`             | `PUT /v7.0/type/{t}/{gguid}/alarm/self`                              |
 |38 | `delete_alarm`          | `DELETE /v7.0/type/{t}/{gguid}/alarm/self`                           |
+|39 | `set_object_permission` | `POST /v7.0/type/{t}/{gguid}/permission`                             |
+|40 | `delete_object_permission` | `DELETE /v7.0/type/{t}/{gguid}/permission/{permissionGGUID}`      |
 
 See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
 and categories.
@@ -144,6 +148,8 @@ is only an example — set your own base URL.
 | `GENESISWORLD_PASSWORD`    | yes      | `mypassword`                              |
 | `GENESISWORLD_PRODUCT_KEY` | no       | sent as `X-CAS-PRODUCT-KEY` if provided   |
 | `GENESISWORLD_READ_ONLY`   | no       | `true` = read-only mode (same as `--read-only`) |
+| `GENESISWORLD_MAX_RESULT_CHARS` | no  | Result cap in chars (default 60000; `0` = off)  |
+| `GENESISWORLD_QUIET`       | no       | `true` = no per-request stderr logging          |
 
 ## Run
 

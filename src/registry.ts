@@ -68,6 +68,9 @@ import { tool as listEmailAttachments } from "./tools/list_email_attachments.js"
 import { tool as getEmailAttachment } from "./tools/get_email_attachment.js";
 import { tool as getEmailFile } from "./tools/get_email_file.js";
 import { tool as createAppointmentSafe } from "./flows/create_appointment_safe.js";
+import { tool as listObjectPermissions } from "./tools/list_object_permissions.js";
+import { tool as setObjectPermission } from "./tools/set_object_permission.js";
+import { tool as deleteObjectPermission } from "./tools/delete_object_permission.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -128,6 +131,9 @@ export const REGISTRY: ToolDef[] = [
   getEmailAttachment,
   getEmailFile,
   createAppointmentSafe,
+  listObjectPermissions,
+  setObjectPermission,
+  deleteObjectPermission,
 ];
 
 export interface RegisterOptions {

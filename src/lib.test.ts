@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
-import { jsonResult, errorResult } from "./lib.js";
+import { jsonResult, errorResult, capResult } from "./lib.js";
 
 describe("apiSend", () => {
   let apiSend: typeof import("./lib.js").apiSend;
@@ -76,6 +76,36 @@ describe("jsonResult", () => {
   it("returns plain text for non-JSON", () => {
     const result = jsonResult("plain text");
     expect(result.content[0].text).toBe("plain text");
+  });
+});
+
+describe("capResult / jsonResult truncation", () => {
+  beforeEach(() => {
+    delete process.env.GENESISWORLD_MAX_RESULT_CHARS;
+  });
+
+  it("passes small bodies through untouched", () => {
+    expect(capResult("short")).toBe("short");
+  });
+
+  it("truncates oversized bodies with an actionable hint", () => {
+    process.env.GENESISWORLD_MAX_RESULT_CHARS = "10";
+    const out = capResult("x".repeat(50));
+    expect(out.startsWith("x".repeat(10))).toBe(true);
+    expect(out).toMatch(/truncated: response was 50 chars/);
+    expect(out).toMatch(/GENESISWORLD_MAX_RESULT_CHARS/);
+  });
+
+  it("can be disabled with 0", () => {
+    process.env.GENESISWORLD_MAX_RESULT_CHARS = "0";
+    const big = "x".repeat(100_000);
+    expect(capResult(big)).toBe(big);
+  });
+
+  it("applies inside jsonResult", () => {
+    process.env.GENESISWORLD_MAX_RESULT_CHARS = "20";
+    const result = jsonResult(JSON.stringify({ data: "y".repeat(100) }));
+    expect(result.content[0].text).toMatch(/truncated/);
   });
 });
 

@@ -111,16 +111,16 @@ Deliberately after stage 1 (maintainer decision, 2026-07-22).
 | P5.4 | Alarm tools (set/delete own alarm) | done | P1.2 | `PUT/DELETE /v7.0/type/{t}/{gguid}/alarm/self` |
 | P5.5 | Document/email read tools: file fetch, versions, attachments | done | — | `GET /v7.0/type/document/{gguid}/file…`, `GET /v7.0/type/emailstore/{gguid}/attachment…` |
 
-## P6 — Hardening & efficiency `next`
+## P6 — Hardening & efficiency `blocked` (remaining items need maintainer input)
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P6.1 | Response projection: opt-in field allowlists on list/full tools to cut token bloat | planned | P1.1 | — |
-| P6.2 | Pagination guardrails: sane default page sizes, `has_more` surfacing | planned | — | — |
-| P6.3 | Object permissions read/write | planned | P1.2 | `GET/POST/DELETE …/permission…` |
-| P6.4 | OAuth2 authorization-code support as alternative to Basic Auth | planned | — | — |
-| P6.5 | Structured logging + request timing to stderr | planned | — | — |
-| P6.6 | npm publish / release pipeline | planned | — | — |
+| P6.1 | Response projection: opt-in field allowlists on list/full tools to cut token bloat | done | P1.1 | — (server-side `fields` params existed; added a global result cap: GENESISWORLD_MAX_RESULT_CHARS, default 60000, truncates with an actionable hint) |
+| P6.2 | Pagination guardrails: sane default page sizes, `has_more` surfacing | done | — | — (flows default to 25/page; atomic tools stay 1:1 pass-through by design — the result cap catches runaway payloads; `has_more` impossible without response schemas) |
+| P6.3 | Object permissions read/write | done | P1.2 | `GET …/permission/full`, `POST …/permission`, `DELETE …/permission/{permissionGGUID}` |
+| P6.4 | OAuth2 authorization-code support as alternative to Basic Auth | blocked | — | — (needs a live OAuth2-enabled installation to verify against) |
+| P6.5 | Structured logging + request timing to stderr | done | — | — (method/path/status/duration per call; GENESISWORLD_QUIET=true disables) |
+| P6.6 | npm publish / release pipeline | blocked | — | — (needs npm credentials + maintainer decision on package scope) |
 
 ---
 

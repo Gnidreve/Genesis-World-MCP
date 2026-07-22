@@ -11,11 +11,11 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P5 done** (registry, modes,
-annotations, readme + metadata resources, generic write layer, task +
-address + appointment flows, document/email reads). 58 tools: 38 read /
-20 write, 7 of them flows. **P6 (hardening & efficiency) is the active
-work front.**
+stable item IDs). Current state: **P0–P6 done** except two externally
+blocked items (P6.4 OAuth2 — needs a live OAuth2 installation; P6.6 npm
+publish — needs credentials). 61 tools: 39 read / 22 write, 7 of them
+flows; result cap + request logging in place. New work = new ROADMAP
+items first.
 
 ## Standing orders — READ FIRST
 
@@ -107,7 +107,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (58: 38 read / 20 write; 7 flows)
+## Currently implemented tools (61: 39 read / 22 write; 7 flows)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -145,6 +145,7 @@ src/
 | 21j| `list_email_attachments`           | GET  | `/v7.0/type/emailstore/{gguid}/attachment/list`                   |
 | 21k| `get_email_attachment`             | GET  | `/v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`         |
 | 21l| `get_email_file`                   | GET  | `/v7.0/type/emailstore/{gguid}/file`                              |
+| 21m| `list_object_permissions`          | GET  | `/v7.0/type/{t}/{gguid}/permission/full`                          |
 
 ### Flows (`kind: "flow"` — one tool, several upstream calls)
 
@@ -163,7 +164,16 @@ Also new (write, atomic): `set_contact_persons_active`
 (`POST /type/address/{gguid}/contactperson/activate|deactivate`),
 `add_appointment_participant`, `remove_appointment_participant`,
 `set_recurrence` (POST create / PUT update in one tool),
-`delete_recurrence`, `set_alarm`, `delete_alarm`.
+`delete_recurrence`, `set_alarm`, `delete_alarm`,
+`set_object_permission`, `delete_object_permission`.
+
+### Result cap & logging (P6)
+
+- Every tool result passes through `capResult` (lib.ts): bodies above
+  `GENESISWORLD_MAX_RESULT_CHARS` (default 60000, `0` disables) are
+  truncated with an actionable hint (use `fields`/paging/views).
+- Every upstream call logs `METHOD path -> status (ms)` to stderr;
+  `GENESISWORLD_QUIET=true` disables.
 
 Flow rules: flows never hide destructive steps (a flow that writes is
 `mode: "write"`); sub-results are embedded as parsed JSON in one combined
@@ -245,6 +255,8 @@ example** and is never baked into the code.
 | `GENESISWORLD_PASSWORD`    | yes\*    | Basic Auth password                              |
 | `GENESISWORLD_PRODUCT_KEY` | no       | Sent as `X-CAS-PRODUCT-KEY` header only if set   |
 | `GENESISWORLD_READ_ONLY`   | no       | `true` → read-only mode (equivalent: `--read-only` CLI flag) |
+| `GENESISWORLD_MAX_RESULT_CHARS` | no  | Result cap in chars (default 60000; `0` disables truncation) |
+| `GENESISWORLD_QUIET`       | no       | `true` → suppress per-request stderr logging      |
 | `MCP_TRANSPORT`            | no       | `http` (default in Docker) or `stdio`            |
 | `MCP_HOST`                 | no       | Bind host for HTTP mode (default: `0.0.0.0`)     |
 | `MCP_PORT`                 | no       | Bind port for HTTP mode (default: `3000`)        |
