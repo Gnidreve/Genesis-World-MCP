@@ -30,6 +30,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { ensureConfig, getBaseUrl } from "./lib.js";
 import { isReadOnly, registerTools } from "./registry.js";
 import { README_URI } from "./resources/readme.js";
+import { registerMetadataResources } from "./resources/metadata.js";
 
 const INSTRUCTIONS =
   "CAS genesisWorld CRM access. Start by reading the static orientation " +
@@ -44,6 +45,7 @@ function buildServer(readOnly: boolean): McpServer {
     { instructions: INSTRUCTIONS }
   );
   registerTools(server, { readOnly });
+  registerMetadataResources(server);
   return server;
 }
 

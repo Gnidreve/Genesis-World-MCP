@@ -25,6 +25,12 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://readme` — static orientation document (domain model,
   navigation patterns, efficiency rules). Never changes during a session;
   also available as the `readme` tool for clients without resource support.
+- `genesisworld://types` — data-object types accessible to the user, with
+  permissions. Cached 15 min.
+- `genesisworld://metadata/{objectType}` — field/relationship schema of one
+  type (template, e.g. `genesisworld://metadata/ADDRESS`). Cached 15 min.
+- `genesisworld://views/{objectType}` — saved views of one type (template,
+  e.g. `genesisworld://views/TASK`). Cached 15 min.
 
 ## Tools (21)
 
@@ -204,7 +210,10 @@ src/
 ├── registry.ts       # Tool registry, isReadOnly, registerTools
 ├── registry.test.ts  # Registry / mode / annotations / readme tests
 ├── resources/
-│   └── readme.ts     # Static orientation tool + resource
+│   ├── readme.ts     # Static orientation tool + resource
+│   ├── metadata.ts   # Cached types/metadata/views resources
+│   ├── metadata.test.ts
+│   └── cache.ts      # In-memory TTL cache
 ├── __tests__/
 │   └── test-utils.ts # Mock helpers (tools + resources)
 └── tools/

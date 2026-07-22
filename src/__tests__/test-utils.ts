@@ -30,9 +30,10 @@ export interface ToolRegistration {
 
 export interface ResourceRegistration {
   name: string;
-  uri: string;
+  /** Plain URI string or a ResourceTemplate instance. */
+  uri: any;
   config: Record<string, any>;
-  readCallback: (uri: URL) => Promise<any>;
+  readCallback: (uri: URL, variables?: Record<string, unknown>) => Promise<any>;
 }
 
 export interface MockServer {

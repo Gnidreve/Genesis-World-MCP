@@ -42,7 +42,7 @@ server. This file is the **single source of truth for project progress**.
 | P0.3 | Transports: stdio + Streamable HTTP (+SSE), Docker image    | done   | —    | — |
 | P0.4 | Config via env vars, Basic Auth, optional product key       | done   | —    | — |
 
-## P1 — Server core: modes, registry, resources `next`
+## P1 — Server core: modes, registry, resources `done`
 
 Goal: the structural upgrade every later phase builds on.
 
@@ -52,14 +52,14 @@ Goal: the structural upgrade every later phase builds on.
 | P1.2 | **Launch modes**: CLI flag `--read-only` + env `GENESISWORLD_READ_ONLY=true` (either activates). In read-only mode, `mode: "write"` tools are not registered | done | P1.1 | — |
 | P1.3 | **MCP tool annotations** on every tool: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `title` | done | P1.1 | — |
 | P1.4 | **`readme` tool + resource**: static server overview (what this server is, type system, native vs. custom types, how to navigate, flow index). Description states: *"Static — content never changes during a session. Read once, do not re-read."* Served as resource `genesisworld://readme` and mirrored as a `readme` tool for resource-less clients | done | — | — |
-| P1.5 | **Metadata resources**: object types, field metadata, view lists as MCP resources (cached, TTL) so agents stop paying tool calls for schema discovery | next | P1.1 | `GET /v7.0/metadata`, `GET /v7.0/user/self/dataobjecttypepermission/list`, `GET /v7.0/type/{t}/view/list` |
+| P1.5 | **Metadata resources**: object types, field metadata, view lists as MCP resources (cached, TTL) so agents stop paying tool calls for schema discovery | done | P1.1 | `GET /v7.0/metadata`, `GET /v7.0/user/self/dataobjecttypepermission/list`, `GET /v7.0/type/{t}/view/list` |
 | P1.6 | **Server `instructions`** field populated at init (compact navigation hints for clients that surface it) | done | P1.4 | — |
 
 **Acceptance P1:** server starts in both modes; read-only registers exactly the
 `mode: "read"` set; tests assert registry filtering; `readme` content served
 byte-identical from resource and tool.
 
-## P2 — Generic write layer `planned`
+## P2 — Generic write layer `next`
 
 Goal: full CRUD for *any* data-object type (native and custom alike) —
 this is the substrate the native flows in P3/P4 compose over.

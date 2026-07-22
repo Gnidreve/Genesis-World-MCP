@@ -11,9 +11,9 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0 done** (20 read tools), **P1 mostly
-done** (registry, modes, annotations, readme tool/resource, instructions —
-P1.5 metadata resources still open).
+stable item IDs). Current state: **P0 + P1 done** (20 read tools; registry,
+modes, annotations, readme + metadata resources, instructions). **P2
+(generic write layer) is the active work front.**
 
 ## Standing orders — READ FIRST
 
@@ -68,10 +68,12 @@ P1.5 metadata resources still open).
    create; resolve self → filtered task list) and returns one compact
    result. Flows live in `src/flows/`, compose the same `lib.ts` HTTP layer,
    and never hide destructive steps: a flow that writes is `mode: "write"`.
-3. **Resources for slow-moving data.** Type metadata, view lists, user
-   lists, and the static server overview are exposed as MCP resources so
-   agents don't burn tool calls on schema discovery (readme done; metadata
-   resources = P1.5, open).
+3. **Resources for slow-moving data.** Implemented in
+   `src/resources/metadata.ts` (15-min in-memory TTL cache, `cache.ts`):
+   `genesisworld://types` (accessible types + permissions),
+   `genesisworld://metadata/{objectType}` (field schema, template),
+   `genesisworld://views/{objectType}` (saved views, template). Registered
+   in every launch mode — they are reads.
 4. **The `readme` tool/resource** (implemented, `src/resources/readme.ts`)
    returns a static orientation document (domain model, native vs. custom,
    navigation patterns, efficiency rules). Its description explicitly says
@@ -91,7 +93,7 @@ src/
 ├── registry.test.ts# registry, mode-filtering, annotations, readme tests
 ├── tools/          # atomic tools — one file, one upstream operation
 ├── flows/          # (P3+) composite flow tools
-├── resources/      # MCP resources: readme.ts (static orientation)
+├── resources/      # MCP resources: readme.ts, metadata.ts, cache.ts (TTL)
 └── __tests__/      # shared test utils (mock server: tools + resources)
 ```
 
