@@ -80,6 +80,10 @@ see no create/update/delete tools, that is why, not an error.
   small pages plus \`get_data_object_count\` over fetching everything.
 - \`*_full\` variants return every field — use only when you need them.
 - Dates/times are ISO 8601; GGUIDs are opaque strings, never guess them.
+- Updates require the object's current ETag (If-Match).
+  \`update_data_object\` fetches it automatically — pass \`etag\` from a
+  fresh read to save that round trip. A rejected update means the object
+  changed concurrently: re-read, then retry with the new ETag.
 `;
 
 export function registerReadme(server: McpServer): void {

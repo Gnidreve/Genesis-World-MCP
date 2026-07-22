@@ -75,6 +75,7 @@ this is the substrate the native flows in P3/P4 compose over.
 | P2.7 | `create_dossier_entry` / `delete_dossier_entry` | done | P1.2 | `POST /v7.0/type/{t}/{gguid}/dossier`, `DELETE /v7.0/type/{t}/{gguid}/dossier/{entryGGUID}` |
 | P2.8 | `get_data_objects_bulk` (bulk read by GUID list — POST but `mode: "read"`) | done | P1.1 | `POST /v7.0/type/{dataObjectType}/records` |
 | P2.9 | `restore_data_object` (recycle bin undelete) | done | P2.3 | `POST /v7.0/type/{dataObjectType}/rbin/undelete` |
+| P2.10 | **ETag/If-Match** on `update_data_object`: live servers reject PUT without `If-Match` (undocumented in swagger.json). Optional `etag` arg + auto-fetch via `GET …?fields=ETAG` | done | P2.2 | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}` |
 
 **Acceptance P2:** every write tool carries correct annotations, is absent in
 read-only mode, and has declarative tests (path, verb, body mapping, error path).

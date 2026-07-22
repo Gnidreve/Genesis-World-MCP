@@ -103,10 +103,11 @@ export async function apiSend(
   path: string,
   query: QueryParams,
   body?: unknown,
-  contentType = "application/json"
+  contentType = "application/json",
+  extraHeaders?: Record<string, string>
 ): Promise<string> {
   const url = buildUrl(path, query);
-  const headers = authHeaders();
+  const headers = { ...authHeaders(), ...extraHeaders };
   const init: RequestInit = { method, headers };
   if (body !== undefined) {
     headers["Content-Type"] = contentType;
@@ -125,6 +126,25 @@ export async function apiSend(
     );
   }
   return text || JSON.stringify({ ok: true, status: res.status });
+}
+
+/**
+ * Quote an ETag value for use in an If-Match header (RFC 7232). The API
+ * returns the bare value in the object's ETAG field; the header wants it
+ * quoted. Already-quoted or weak (W/"...") values pass through unchanged.
+ */
+export function formatIfMatch(etag: string): string {
+  const v = etag.trim();
+  if (v.startsWith('"') || v.startsWith("W/")) return v;
+  return `"${v}"`;
+}
+
+/** Best-effort ETAG extraction from a data-object payload. */
+export function extractEtag(parsed: unknown): string | undefined {
+  if (typeof parsed !== "object" || parsed === null) return undefined;
+  const obj = parsed as Record<string, any>;
+  const candidate = obj.fields?.ETAG ?? obj.ETAG ?? obj.etag ?? undefined;
+  return typeof candidate === "string" && candidate ? candidate : undefined;
 }
 
 /**

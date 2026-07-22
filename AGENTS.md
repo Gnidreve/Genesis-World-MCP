@@ -299,6 +299,16 @@ same env vars.
   are pass-throughs, we do not bind to these response types.
 - `POST` ≠ write in this API — several POST endpoints are reads (bulk load,
   duplicate check, salutation formatting). Always classify semantically.
+- **Optimistic concurrency is enforced but undocumented**: live
+  installations reject `PUT /type/{t}/{gguid}` without a valid `If-Match`
+  header (HTTP 400 `ILLEGAL_ARGUMENT_VALUE`, "Mandatory header 'If-Match'
+  is missing or invalid") — swagger.json mentions neither the header nor
+  the objects' `ETAG` field (live finding, 2026-07-22).
+  `update_data_object` therefore accepts an `etag` argument and
+  auto-fetches the ETag (`GET …?fields=ETAG`) when it's omitted; bare
+  values are quoted per RFC 7232. If other PUT endpoints (alarm, image,
+  recurrence) turn out to enforce it too, apply the same pattern via
+  `apiSend`'s `extraHeaders` parameter.
 
 ## Out of scope
 

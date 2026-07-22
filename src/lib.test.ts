@@ -38,6 +38,15 @@ describe("apiSend", () => {
     expect(init.body).toBe("hello");
   });
 
+  it("merges extra headers (e.g. If-Match) into the request", async () => {
+    await apiSend("PUT", "/p", {}, { a: 1 }, "application/json", {
+      "If-Match": '"etag-123"',
+    });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["If-Match"]).toBe('"etag-123"');
+    expect(init.headers["Content-Type"]).toBe("application/json");
+  });
+
   it("omits body and Content-Type when no body is given", async () => {
     await apiSend("DELETE", "/p", {});
     const [, init] = fetchMock.mock.calls[0];

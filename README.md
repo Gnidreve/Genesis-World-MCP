@@ -98,7 +98,7 @@ One tool call, several upstream calls bundled server-side:
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|
 |22 | `create_data_object`    | `POST /v7.0/type/{dataObjectType}`                                   |
-|23 | `update_data_object`    | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}`                  |
+|23 | `update_data_object`    | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}` (handles the required `If-Match` ETag automatically) |
 |24 | `delete_data_object`    | `DELETE /v7.0/type/{dataObjectType}/{dataObjectGGUID}`               |
 |25 | `restore_data_object`   | `POST /v7.0/type/{dataObjectType}/rbin/undelete`                     |
 |26 | `create_link`           | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link`            |
