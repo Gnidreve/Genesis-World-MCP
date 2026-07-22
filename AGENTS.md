@@ -11,9 +11,10 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0 + P1 done** (20 read tools; registry,
-modes, annotations, readme + metadata resources, instructions). **P2
-(generic write layer) is the active work front.**
+stable item IDs). Current state: **P0–P2 done** (22 read tools incl. bulk
+load; registry, modes, annotations, readme + metadata resources; generic
+write layer with 10 mutating tools). **P3 (task flows) is the active work
+front.**
 
 ## Standing orders — READ FIRST
 
@@ -47,10 +48,8 @@ modes, annotations, readme + metadata resources, instructions). **P2
   - `mode: "write"` — anything that creates, updates, deletes, links,
     tags, or otherwise mutates CRM data.
 - Every tool carries MCP annotations: `readOnlyHint`, `destructiveHint`
-  (true for deletes), `idempotentHint`, `title`.
-- Until P2 lands, the server is factually read-only in both modes (no write
-  tools exist yet); the old "GET-only by design" rule is **superseded** by
-  this model.
+  (true for deletes), `idempotentHint`, `title`. `registry.test.ts`
+  enforces that `readOnlyHint` matches the declared `mode`.
 
 ## Design pillars
 
@@ -107,7 +106,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (21 — all `mode: "read"`, atomic)
+## Currently implemented tools (32 atomic: 22 read / 10 write)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -132,6 +131,28 @@ src/
 | 18 | `get_object_tags`                  | GET  | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags`              |
 | 19 | `get_full_data_objects`            | GET  | `/v7.0/type/{dataObjectType}/full`                                |
 | 20 | `list_data_objects_by_view_full`   | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/full`                  |
+| 21 | `get_data_objects_bulk`            | POST | `/v7.0/type/{dataObjectType}/records` (**read** despite POST)     |
+
+### Write tools (`mode: "write"` — hidden in read-only mode)
+
+| #  | Tool                    | HTTP   | Endpoint                                                            |
+|----|-------------------------|--------|---------------------------------------------------------------------|
+| 22 | `create_data_object`    | POST   | `/v7.0/type/{dataObjectType}`                                       |
+| 23 | `update_data_object`    | PUT    | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}`                     |
+| 24 | `delete_data_object`    | DELETE | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}` (→ recycle bin)     |
+| 25 | `restore_data_object`   | POST   | `/v7.0/type/{dataObjectType}/rbin/undelete`                         |
+| 26 | `create_link`           | POST   | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/link`                |
+| 27 | `delete_link`           | DELETE | `/v7.0/type/{t}/{gguid}/link/{objecttype2}/{guid2}/{attribute}`     |
+| 28 | `set_object_tags`       | POST   | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags/user`           |
+| 29 | `append_notes`          | POST   | `/v7.0/type/{t}/{gguid}/notes/{fieldName}` (text/plain or text/html body) |
+| 30 | `create_dossier_entry`  | POST   | `/v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier`             |
+| 31 | `delete_dossier_entry`  | DELETE | `/v7.0/type/{t}/{gguid}/dossier/{dossierEntryGGUID}`                |
+
+Write-payload shape: create/update send `{ fields: { FIELD: value } }`;
+link bodies are `{ fields: { OBJECTTYPE1, GGUID1, OBJECTTYPE2, GGUID2,
+ATTRIBUTE? } }`; bulk load and undelete send a plain JSON array of GGUIDs;
+the notes affix goes as a raw text body with `prepend`/`with-timestamp`
+query params.
 
 ### Tool categories
 

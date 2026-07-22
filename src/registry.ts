@@ -31,6 +31,17 @@ import { tool as getObjectTags } from "./tools/get_object_tags.js";
 import { tool as getFullDataObjects } from "./tools/get_full_data_objects.js";
 import { tool as listDataObjectsByViewFull } from "./tools/list_data_objects_by_view_full.js";
 import { tool as readme } from "./resources/readme.js";
+import { tool as createDataObject } from "./tools/create_data_object.js";
+import { tool as updateDataObject } from "./tools/update_data_object.js";
+import { tool as deleteDataObject } from "./tools/delete_data_object.js";
+import { tool as createLink } from "./tools/create_link.js";
+import { tool as deleteLink } from "./tools/delete_link.js";
+import { tool as setObjectTags } from "./tools/set_object_tags.js";
+import { tool as appendNotes } from "./tools/append_notes.js";
+import { tool as createDossierEntry } from "./tools/create_dossier_entry.js";
+import { tool as deleteDossierEntry } from "./tools/delete_dossier_entry.js";
+import { tool as getDataObjectsBulk } from "./tools/get_data_objects_bulk.js";
+import { tool as restoreDataObject } from "./tools/restore_data_object.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -54,6 +65,17 @@ export const REGISTRY: ToolDef[] = [
   getObjectTags,
   getFullDataObjects,
   listDataObjectsByViewFull,
+  getDataObjectsBulk,
+  createDataObject,
+  updateDataObject,
+  deleteDataObject,
+  createLink,
+  deleteLink,
+  setObjectTags,
+  appendNotes,
+  createDossierEntry,
+  deleteDossierEntry,
+  restoreDataObject,
 ];
 
 export interface RegisterOptions {

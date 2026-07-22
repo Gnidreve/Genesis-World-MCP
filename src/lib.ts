@@ -46,8 +46,7 @@ function authHeaders(): Record<string, string> {
   return headers;
 }
 
-/** Perform a read-only GET against the genesisWorld REST API. */
-export async function apiGet(path: string, query: QueryParams): Promise<string> {
+function buildUrl(path: string, query: QueryParams): URL {
   const baseUrl = getBaseUrl();
   const url = new URL(`${baseUrl}${path}`);
   for (const [key, value] of Object.entries(query)) {
@@ -62,7 +61,12 @@ export async function apiGet(path: string, query: QueryParams): Promise<string> 
       url.searchParams.set(key, String(value));
     }
   }
+  return url;
+}
 
+/** Perform a read-only GET against the genesisWorld REST API. */
+export async function apiGet(path: string, query: QueryParams): Promise<string> {
+  const url = buildUrl(path, query);
   const res = await fetch(url, { method: "GET", headers: authHeaders() });
   const text = await res.text();
 
@@ -73,6 +77,41 @@ export async function apiGet(path: string, query: QueryParams): Promise<string> 
     );
   }
   return text;
+}
+
+/**
+ * Perform a POST/PUT/DELETE against the genesisWorld REST API.
+ *
+ * `body` is JSON-encoded unless a non-JSON `contentType` is given, in which
+ * case it is sent as-is (e.g. the notes-affix endpoint takes text/plain or
+ * text/html). An empty upstream response body is normalized to a small JSON
+ * status object so tool results are never blank.
+ */
+export async function apiSend(
+  method: "POST" | "PUT" | "DELETE",
+  path: string,
+  query: QueryParams,
+  body?: unknown,
+  contentType = "application/json"
+): Promise<string> {
+  const url = buildUrl(path, query);
+  const headers = authHeaders();
+  const init: RequestInit = { method, headers };
+  if (body !== undefined) {
+    headers["Content-Type"] = contentType;
+    init.body = contentType === "application/json" ? JSON.stringify(body) : String(body);
+  }
+
+  const res = await fetch(url, init);
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error(
+      `HTTP ${res.status} ${res.statusText} for ${method} ${url.pathname}${url.search}\n` +
+        text.slice(0, 4000)
+    );
+  }
+  return text || JSON.stringify({ ok: true, status: res.status });
 }
 
 export function jsonResult(text: string) {

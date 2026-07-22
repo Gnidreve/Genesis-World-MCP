@@ -7,22 +7,22 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 21 read tools (incl. the static `readme` orientation
-tool/resource), central tool registry, and a `--read-only` launch mode.
-**Direction:** a full read-write server with native-type flows (Aufgaben,
-Adressen, Termine, …) — see the machine-readable plan in
-[`ROADMAP.md`](./ROADMAP.md).
+**Current state:** 32 tools — 22 read (incl. bulk load and the static
+`readme` orientation tool/resource) and 10 write (create/update/delete,
+links, tags, notes, dossier, recycle bin), gated by a `--read-only` launch
+mode. **Direction:** native-type flows (Aufgaben, Adressen, Termine, …) —
+see the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 
 ## Modes
 
-- **Default: read-write.** All registered tools are available. (Until write
-  tools land — ROADMAP P2 — the server is factually read-only either way.)
+- **Default: read-write.** All 32 tools are registered.
 - **Read-only:** start with the `--read-only` CLI flag or
-  `GENESISWORLD_READ_ONLY=true`. Tools classified as writing are then not
-  registered at all. Classification is semantic, not by HTTP verb.
+  `GENESISWORLD_READ_ONLY=true`. The 10 mutating tools are then not
+  registered at all (22 tools remain). Classification is semantic, not by
+  HTTP verb — e.g. the POST-based bulk load stays available.
 
 ## Resources
 
@@ -36,7 +36,9 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (21)
+## Tools (32)
+
+### Read (22)
 
 | # | Tool                               | Endpoint                                                          |
 |---|------------------------------------|-------------------------------------------------------------------|
@@ -61,6 +63,22 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 |18 | `get_object_tags`                  | `GET /v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags`          |
 |19 | `get_full_data_objects`            | `GET /v7.0/type/{dataObjectType}/full`                            |
 |20 | `list_data_objects_by_view_full`   | `GET /v7.0/type/{dataObjectType}/view/{viewID}/full`              |
+|21 | `get_data_objects_bulk`            | `POST /v7.0/type/{dataObjectType}/records` (read despite POST)    |
+
+### Write (10 — hidden in read-only mode)
+
+| # | Tool                    | Endpoint                                                             |
+|---|-------------------------|----------------------------------------------------------------------|
+|22 | `create_data_object`    | `POST /v7.0/type/{dataObjectType}`                                   |
+|23 | `update_data_object`    | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}`                  |
+|24 | `delete_data_object`    | `DELETE /v7.0/type/{dataObjectType}/{dataObjectGGUID}`               |
+|25 | `restore_data_object`   | `POST /v7.0/type/{dataObjectType}/rbin/undelete`                     |
+|26 | `create_link`           | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/link`            |
+|27 | `delete_link`           | `DELETE /v7.0/type/{t}/{gguid}/link/{objecttype2}/{guid2}/{attribute}`|
+|28 | `set_object_tags`       | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/tags/user`       |
+|29 | `append_notes`          | `POST /v7.0/type/{t}/{gguid}/notes/{fieldName}`                      |
+|30 | `create_dossier_entry`  | `POST /v7.0/type/{dataObjectType}/{dataObjectGGUID}/dossier`         |
+|31 | `delete_dossier_entry`  | `DELETE /v7.0/type/{t}/{gguid}/dossier/{dossierEntryGGUID}`          |
 
 See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
 and categories.

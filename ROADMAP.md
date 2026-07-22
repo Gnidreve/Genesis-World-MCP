@@ -59,27 +59,27 @@ Goal: the structural upgrade every later phase builds on.
 `mode: "read"` set; tests assert registry filtering; `readme` content served
 byte-identical from resource and tool.
 
-## P2 — Generic write layer `next`
+## P2 — Generic write layer `done`
 
 Goal: full CRUD for *any* data-object type (native and custom alike) —
 this is the substrate the native flows in P3/P4 compose over.
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P2.1 | `create_data_object` | planned | P1.2 | `POST /v7.0/type/{dataObjectType}` |
-| P2.2 | `update_data_object` | planned | P1.2 | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}` |
-| P2.3 | `delete_data_object` (→ recycle bin; `destructiveHint: true`) | planned | P1.2 | `DELETE /v7.0/type/{dataObjectType}/{dataObjectGGUID}` |
-| P2.4 | `create_link` / `delete_link` | planned | P1.2 | `POST /v7.0/type/{t}/{gguid}/link`, `DELETE /v7.0/type/{t}/{gguid}/link/{t2}/{guid2}/{attribute}` |
-| P2.5 | `set_object_tags` (write/delete user tag assignments) | planned | P1.2 | `POST /v7.0/type/{t}/{gguid}/tags/user` |
-| P2.6 | `append_notes` (affix to notes field) | planned | P1.2 | `POST /v7.0/type/{t}/{gguid}/notes/{fieldName}` |
-| P2.7 | `create_dossier_entry` / `delete_dossier_entry` | planned | P1.2 | `POST /v7.0/type/{t}/{gguid}/dossier`, `DELETE /v7.0/type/{t}/{gguid}/dossier/{entryGGUID}` |
-| P2.8 | `get_data_objects_bulk` (bulk read by GUID list — POST but `mode: "read"`) | planned | P1.1 | `POST /v7.0/type/{dataObjectType}/records` |
-| P2.9 | `restore_data_object` (recycle bin undelete) | planned | P2.3 | `POST /v7.0/type/{dataObjectType}/rbin/undelete` |
+| P2.1 | `create_data_object` | done | P1.2 | `POST /v7.0/type/{dataObjectType}` |
+| P2.2 | `update_data_object` | done | P1.2 | `PUT /v7.0/type/{dataObjectType}/{dataObjectGGUID}` |
+| P2.3 | `delete_data_object` (→ recycle bin; `destructiveHint: true`) | done | P1.2 | `DELETE /v7.0/type/{dataObjectType}/{dataObjectGGUID}` |
+| P2.4 | `create_link` / `delete_link` | done | P1.2 | `POST /v7.0/type/{t}/{gguid}/link`, `DELETE /v7.0/type/{t}/{gguid}/link/{t2}/{guid2}/{attribute}` |
+| P2.5 | `set_object_tags` (write/delete user tag assignments) | done | P1.2 | `POST /v7.0/type/{t}/{gguid}/tags/user` |
+| P2.6 | `append_notes` (affix to notes field) | done | P1.2 | `POST /v7.0/type/{t}/{gguid}/notes/{fieldName}` |
+| P2.7 | `create_dossier_entry` / `delete_dossier_entry` | done | P1.2 | `POST /v7.0/type/{t}/{gguid}/dossier`, `DELETE /v7.0/type/{t}/{gguid}/dossier/{entryGGUID}` |
+| P2.8 | `get_data_objects_bulk` (bulk read by GUID list — POST but `mode: "read"`) | done | P1.1 | `POST /v7.0/type/{dataObjectType}/records` |
+| P2.9 | `restore_data_object` (recycle bin undelete) | done | P2.3 | `POST /v7.0/type/{dataObjectType}/rbin/undelete` |
 
 **Acceptance P2:** every write tool carries correct annotations, is absent in
 read-only mode, and has declarative tests (path, verb, body mapping, error path).
 
-## P3 — Native stage 1a: Aufgaben (task) `planned`
+## P3 — Native stage 1a: Aufgaben (task) `next`
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|

@@ -11,13 +11,13 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Mock only apiGet; keep real jsonResult / errorResult
+// Mock only apiGet/apiSend; keep real jsonResult / errorResult
 vi.mock("../lib.js", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
-  return { ...actual, apiGet: vi.fn() };
+  return { ...actual, apiGet: vi.fn(), apiSend: vi.fn() };
 });
 
-import { apiGet } from "../lib.js";
+import { apiGet, apiSend } from "../lib.js";
 import { createMockServer } from "../__tests__/test-utils.js";
 import type { MockServer } from "../__tests__/test-utils.js";
 
@@ -44,6 +44,17 @@ import { registerListTags } from "./list_tags.js";
 import { registerGetObjectTags } from "./get_object_tags.js";
 import { registerGetFullDataObjects } from "./get_full_data_objects.js";
 import { registerListDataObjectsByViewFull } from "./list_data_objects_by_view_full.js";
+import { registerCreateDataObject } from "./create_data_object.js";
+import { registerUpdateDataObject } from "./update_data_object.js";
+import { registerDeleteDataObject } from "./delete_data_object.js";
+import { registerCreateLink } from "./create_link.js";
+import { registerDeleteLink } from "./delete_link.js";
+import { registerSetObjectTags } from "./set_object_tags.js";
+import { registerAppendNotes } from "./append_notes.js";
+import { registerCreateDossierEntry } from "./create_dossier_entry.js";
+import { registerDeleteDossierEntry } from "./delete_dossier_entry.js";
+import { registerGetDataObjectsBulk } from "./get_data_objects_bulk.js";
+import { registerRestoreDataObject } from "./restore_data_object.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -52,13 +63,22 @@ import { registerListDataObjectsByViewFull } from "./list_data_objects_by_view_f
 interface ToolTestCase {
   name: string;
   register: (server: MockServer) => void;
-  /** Expected apiGet path for a default (empty-args) call */
+  /** Expected apiGet/apiSend path for the sample call */
   path: string;
   /** Sample args that exercise as many params as practical */
   sampleArgs: Record<string, any>;
   /** Expected query params for the sample call */
   expectedParams: Record<string, any>;
+  /** HTTP method for apiSend-based tools; omit for apiGet-based tools */
+  method?: "POST" | "PUT" | "DELETE";
+  /** Expected apiSend body (use NO_BODY for body-less sends) */
+  expectedBody?: any;
+  /** Expected apiSend content type (only when non-default) */
+  contentType?: string;
 }
+
+/** Sentinel: apiSend called without a body argument. */
+const NO_BODY = Symbol("no-body");
 
 const TOOL_CONFIGS: ToolTestCase[] = [
   {
@@ -395,6 +415,167 @@ const TOOL_CONFIGS: ToolTestCase[] = [
       "entries-per-page": 75,
     },
   },
+  // ------------------------------------------------------------------
+  // Write layer (apiSend-based) + POST-but-read bulk load
+  // ------------------------------------------------------------------
+  {
+    name: "create_data_object",
+    register: (s) => registerCreateDataObject(s as any),
+    method: "POST",
+    path: "/v7.0/type/TASK",
+    sampleArgs: {
+      dataObjectType: "TASK",
+      fields: { KEYWORD: "Follow-up", NOTES: "call back" },
+      tagAsRecentlyUsed: true,
+    },
+    expectedParams: { "tag-as-recently-used": true },
+    expectedBody: { fields: { KEYWORD: "Follow-up", NOTES: "call back" } },
+  },
+  {
+    name: "update_data_object",
+    register: (s) => registerUpdateDataObject(s as any),
+    method: "PUT",
+    path: "/v7.0/type/TASK/gguid-1",
+    sampleArgs: {
+      dataObjectType: "TASK",
+      dataObjectGGUID: "gguid-1",
+      fields: { STATUS: 2 },
+    },
+    expectedParams: { "tag-as-recently-used": false },
+    expectedBody: { fields: { STATUS: 2 } },
+  },
+  {
+    name: "delete_data_object",
+    register: (s) => registerDeleteDataObject(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/TASK/gguid-2",
+    sampleArgs: { dataObjectType: "TASK", dataObjectGGUID: "gguid-2" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "create_link",
+    register: (s) => registerCreateLink(s as any),
+    method: "POST",
+    path: "/v7.0/type/TASK/gguid-3/link",
+    sampleArgs: {
+      dataObjectType: "TASK",
+      dataObjectGGUID: "gguid-3",
+      targetType: "ADDRESS",
+      targetGGUID: "addr-1",
+      attribute: "PRIMARY",
+    },
+    expectedParams: {},
+    expectedBody: {
+      fields: {
+        OBJECTTYPE1: "TASK",
+        GGUID1: "gguid-3",
+        OBJECTTYPE2: "ADDRESS",
+        GGUID2: "addr-1",
+        ATTRIBUTE: "PRIMARY",
+      },
+    },
+  },
+  {
+    name: "delete_link",
+    register: (s) => registerDeleteLink(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/TASK/gguid-4/link/ADDRESS/addr-2/PRIMARY",
+    sampleArgs: {
+      dataObjectType: "TASK",
+      dataObjectGGUID: "gguid-4",
+      targetType: "ADDRESS",
+      targetGGUID: "addr-2",
+      attribute: "PRIMARY",
+    },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "set_object_tags",
+    register: (s) => registerSetObjectTags(s as any),
+    method: "POST",
+    path: "/v7.0/type/ADDRESS/gguid-5/tags/user",
+    sampleArgs: {
+      dataObjectType: "ADDRESS",
+      dataObjectGGUID: "gguid-5",
+      assign: ["vip"],
+      unassign: ["old"],
+    },
+    expectedParams: {},
+    expectedBody: { assign: ["vip"], unassign: ["old"] },
+  },
+  {
+    name: "append_notes",
+    register: (s) => registerAppendNotes(s as any),
+    method: "POST",
+    path: "/v7.0/type/TASK/gguid-6/notes/NOTES",
+    sampleArgs: {
+      dataObjectType: "TASK",
+      dataObjectGGUID: "gguid-6",
+      fieldName: "NOTES",
+      text: "called customer",
+      prepend: true,
+      withTimestamp: true,
+    },
+    expectedParams: { prepend: true, "with-timestamp": true },
+    expectedBody: "called customer",
+    contentType: "text/plain",
+  },
+  {
+    name: "create_dossier_entry",
+    register: (s) => registerCreateDossierEntry(s as any),
+    method: "POST",
+    path: "/v7.0/type/ADDRESS/gguid-7/dossier",
+    sampleArgs: {
+      dataObjectType: "ADDRESS",
+      dataObjectGGUID: "gguid-7",
+      entryType: "TASK",
+      entryGGUID: "task-1",
+      attribute: "attr",
+    },
+    expectedParams: { gguid2: "task-1", "object-type2": "TASK", attribute: "attr" },
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "delete_dossier_entry",
+    register: (s) => registerDeleteDossierEntry(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/ADDRESS/gguid-8/dossier/entry-1",
+    sampleArgs: {
+      dataObjectType: "ADDRESS",
+      dataObjectGGUID: "gguid-8",
+      dossierEntryGGUID: "entry-1",
+    },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "get_data_objects_bulk",
+    register: (s) => registerGetDataObjectsBulk(s as any),
+    method: "POST",
+    path: "/v7.0/type/ADDRESS/records",
+    sampleArgs: {
+      dataObjectType: "ADDRESS",
+      gguids: ["a", "b"],
+      fields: "KEYWORD,NAME",
+      includePermissions: true,
+    },
+    expectedParams: {
+      fields: "KEYWORD,NAME",
+      "include-permissions": true,
+    },
+    expectedBody: ["a", "b"],
+  },
+  {
+    name: "restore_data_object",
+    register: (s) => registerRestoreDataObject(s as any),
+    method: "POST",
+    path: "/v7.0/type/TASK/rbin/undelete",
+    sampleArgs: { dataObjectType: "TASK", gguids: ["x"] },
+    expectedParams: {},
+    expectedBody: ["x"],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -408,6 +589,8 @@ for (const cfg of TOOL_CONFIGS) {
     beforeEach(() => {
       vi.mocked(apiGet).mockReset();
       vi.mocked(apiGet).mockResolvedValue("{}");
+      vi.mocked(apiSend).mockReset();
+      vi.mocked(apiSend).mockResolvedValue("{}");
       server = createMockServer();
       cfg.register(server);
     });
@@ -417,11 +600,16 @@ for (const cfg of TOOL_CONFIGS) {
       expect(server.registrations[0].name).toBe(cfg.name);
     });
 
-    it("calls apiGet with correct endpoint", async () => {
-      // Set up path-params mock: for tools with dataObjectType/GGUID in path,
-      // the sampleArgs already contain the right values.
+    it("calls the API with correct endpoint", async () => {
       await server.callHandler(cfg.name, cfg.sampleArgs);
-      expect(apiGet).toHaveBeenCalledWith(cfg.path, cfg.expectedParams);
+      if (!cfg.method) {
+        expect(apiGet).toHaveBeenCalledWith(cfg.path, cfg.expectedParams);
+        return;
+      }
+      const expected: any[] = [cfg.method, cfg.path, cfg.expectedParams];
+      if (cfg.expectedBody !== NO_BODY) expected.push(cfg.expectedBody);
+      if (cfg.contentType) expected.push(cfg.contentType);
+      expect(apiSend).toHaveBeenCalledWith(...expected);
     });
 
     it("returns success (jsonResult) on happy path", async () => {
@@ -429,8 +617,9 @@ for (const cfg of TOOL_CONFIGS) {
       expect(result).not.toHaveProperty("isError");
     });
 
-    it("returns errorResult when apiGet throws", async () => {
+    it("returns errorResult when the API call throws", async () => {
       vi.mocked(apiGet).mockRejectedValue(new Error("Boom"));
+      vi.mocked(apiSend).mockRejectedValue(new Error("Boom"));
       const result = await server.callHandler(cfg.name, cfg.sampleArgs);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toMatch(/Boom/);

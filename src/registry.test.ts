@@ -10,8 +10,10 @@ import { createMockServer } from "./__tests__/test-utils.js";
 import type { ToolDef } from "./types.js";
 
 describe("registry", () => {
-  it("contains 21 entries (20 atomic API tools + readme)", () => {
-    expect(REGISTRY).toHaveLength(21);
+  it("contains 32 entries (22 read incl. readme + bulk-read, 10 write)", () => {
+    expect(REGISTRY).toHaveLength(32);
+    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(22);
+    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(10);
   });
 
   it("has unique tool names", () => {
@@ -64,7 +66,27 @@ describe("registry", () => {
     const selected = registerTools(ro as any, { readOnly: true }, testRegistry);
     expect(ro.registrations.map((r) => r.name)).not.toContain("fake_write");
     expect(selected.every((t) => t.mode === "read")).toBe(true);
-    expect(selected).toHaveLength(REGISTRY.length);
+    expect(selected).toHaveLength(
+      REGISTRY.filter((t) => t.mode === "read").length
+    );
+  });
+
+  it("read-only mode hides all real write tools (e.g. delete_data_object)", () => {
+    const ro = createMockServer();
+    registerTools(ro as any, { readOnly: true });
+    const names = ro.registrations.map((r) => r.name);
+    expect(names).toContain("get_data_objects_bulk"); // POST but read
+    expect(names).not.toContain("create_data_object");
+    expect(names).not.toContain("delete_data_object");
+  });
+
+  it("delete tools carry destructiveHint: true", () => {
+    const server = createMockServer();
+    registerTools(server as any, { readOnly: false });
+    for (const name of ["delete_data_object", "delete_link", "delete_dossier_entry"]) {
+      const reg = server.registrations.find((r) => r.name === name)!;
+      expect(reg.schema.annotations.destructiveHint, name).toBe(true);
+    }
   });
 });
 
