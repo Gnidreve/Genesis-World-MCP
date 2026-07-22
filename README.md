@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://www.acp-gruppe.com/hs-fs/hubfs/cas_genesis_world-1.png?width=1600&height=600&name=cas_genesis_world-1.png" alt="CAS genesisWorld" width="100%" />
+</p>
+
 # cas-genesisworld-mcp
 
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
