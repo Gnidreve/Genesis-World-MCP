@@ -10,10 +10,15 @@ import { createMockServer } from "./__tests__/test-utils.js";
 import type { ToolDef } from "./types.js";
 
 describe("registry", () => {
-  it("contains 32 entries (22 read incl. readme + bulk-read, 10 write)", () => {
-    expect(REGISTRY).toHaveLength(32);
-    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(22);
-    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(10);
+  it("contains 36 entries (25 read / 11 write; 3 of them flows)", () => {
+    expect(REGISTRY).toHaveLength(36);
+    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(25);
+    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(11);
+    expect(REGISTRY.filter((t) => t.kind === "flow").map((t) => t.name).sort()).toEqual([
+      "create_task",
+      "my_open_tasks",
+      "task_overview",
+    ]);
   });
 
   it("has unique tool names", () => {

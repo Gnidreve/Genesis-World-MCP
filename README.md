@@ -7,11 +7,11 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 32 tools — 22 read (incl. bulk load and the static
-`readme` orientation tool/resource) and 10 write (create/update/delete,
-links, tags, notes, dossier, recycle bin), gated by a `--read-only` launch
-mode. **Direction:** native-type flows (Aufgaben, Adressen, Termine, …) —
-see the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
+**Current state:** 36 tools — 25 read / 11 write (create/update/delete,
+links, tags, notes, dossier, recycle bin), including the first native-type
+**flows** for Aufgaben/tasks, gated by a `--read-only` launch mode.
+**Next:** address flows, then Termine — see the machine-readable plan in
+[`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
@@ -36,7 +36,17 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (32)
+## Tools (36)
+
+### Flows (3)
+
+One tool call, several upstream calls bundled server-side:
+
+| Flow            | Mode  | What it does |
+|-----------------|-------|--------------|
+| `my_open_tasks` | read  | Current user + their task list (due window, saved view, or full-text filter) in one call |
+| `task_overview` | read  | Task record + links + tags, fetched in parallel |
+| `create_task`   | write | Create a task and optionally link it to another object (e.g. an address) |
 
 ### Read (22)
 
@@ -64,8 +74,9 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 |19 | `get_full_data_objects`            | `GET /v7.0/type/{dataObjectType}/full`                            |
 |20 | `list_data_objects_by_view_full`   | `GET /v7.0/type/{dataObjectType}/view/{viewID}/full`              |
 |21 | `get_data_objects_bulk`            | `POST /v7.0/type/{dataObjectType}/records` (read despite POST)    |
+|21a| `get_ticket_service_agreements`    | `GET /v7.0/type/task/ticket/serviceagreements`                    |
 
-### Write (10 — hidden in read-only mode)
+### Write (10 — hidden in read-only mode, plus the `create_task` flow)
 
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|

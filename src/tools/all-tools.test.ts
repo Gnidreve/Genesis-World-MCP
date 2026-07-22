@@ -55,6 +55,7 @@ import { registerCreateDossierEntry } from "./create_dossier_entry.js";
 import { registerDeleteDossierEntry } from "./delete_dossier_entry.js";
 import { registerGetDataObjectsBulk } from "./get_data_objects_bulk.js";
 import { registerRestoreDataObject } from "./restore_data_object.js";
+import { registerGetTicketServiceAgreements } from "./get_ticket_service_agreements.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -575,6 +576,31 @@ const TOOL_CONFIGS: ToolTestCase[] = [
     sampleArgs: { dataObjectType: "TASK", gguids: ["x"] },
     expectedParams: {},
     expectedBody: ["x"],
+  },
+  {
+    name: "get_ticket_service_agreements",
+    register: (s) => registerGetTicketServiceAgreements(s as any),
+    path: "/v7.0/type/task/ticket/serviceagreements",
+    sampleArgs: {
+      search: "sla",
+      fields: "KEYWORD",
+      orderBy: "KEYWORD ASC",
+      teamFilter: "team",
+      submitterGGUID: "sub-1",
+      customerGGUID: "cust-1",
+      page: 1,
+      entriesPerPage: 10,
+    },
+    expectedParams: {
+      search: "sla",
+      fields: "KEYWORD",
+      "order-by": "KEYWORD ASC",
+      "team-filter": "team",
+      "submitter-gguid": "sub-1",
+      "customer-gguid": "cust-1",
+      page: 1,
+      "entries-per-page": 10,
+    },
   },
 ];
 

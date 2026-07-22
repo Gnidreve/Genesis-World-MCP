@@ -79,17 +79,17 @@ this is the substrate the native flows in P3/P4 compose over.
 **Acceptance P2:** every write tool carries correct annotations, is absent in
 read-only mode, and has declarative tests (path, verb, body mapping, error path).
 
-## P3 — Native stage 1a: Aufgaben (task) `next`
+## P3 — Native stage 1a: Aufgaben (task) `done`
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|
-| P3.1 | Flow `my_open_tasks`: resolve self → filtered task list (open, due window, sorted by due date), compact projection | planned | P1.1 | `GET /v7.0/user/self`, `GET /v7.0/type/task/list` |
-| P3.2 | Flow `task_overview`: task + links + tags in one call | planned | P1.1 | `GET /v7.0/type/task/{gguid}`, `…/link/list`, `…/tags` |
-| P3.3 | Flow `create_task` (typed args: subject, due, priority, responsible, optional link target → create + link) | planned | P2.1, P2.4 | `POST /v7.0/type/task`, `POST …/link` |
-| P3.4 | Flow `complete_task` / `update_task_status` (typed field mapping) | planned | P2.2 | `PUT /v7.0/type/task/{gguid}` |
-| P3.5 | Tool `get_ticket_service_agreements` (task/ticket extension) | planned | — | `GET /v7.0/type/task/ticket/serviceagreements` |
+| P3.1 | Flow `my_open_tasks`: resolve self → filtered task list (open, due window, sorted by due date), compact projection | done | P1.1 | `GET /v7.0/user/self`, `GET /v7.0/type/task/list` |
+| P3.2 | Flow `task_overview`: task + links + tags in one call | done | P1.1 | `GET /v7.0/type/task/{gguid}`, `…/link/list`, `…/tags` |
+| P3.3 | Flow `create_task` (typed args: subject, due, priority, responsible, optional link target → create + link) | done | P2.1, P2.4 | `POST /v7.0/type/task`, `POST …/link` |
+| P3.4 | Flow `complete_task` / `update_task_status` (typed field mapping) | dropped | P2.2 | — (spec defines no task field vocabulary; hardcoding status field names would break per installation. Covered by `update_data_object` + `genesisworld://metadata/task`) |
+| P3.5 | Tool `get_ticket_service_agreements` (task/ticket extension) | done | — | `GET /v7.0/type/task/ticket/serviceagreements` |
 
-## P4 — Native stage 1b: Adressen (address) `planned`
+## P4 — Native stage 1b: Adressen (address) `next`
 
 | ID   | Item | Status | Deps | Ops |
 |------|------|--------|------|-----|

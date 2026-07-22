@@ -42,6 +42,10 @@ import { tool as createDossierEntry } from "./tools/create_dossier_entry.js";
 import { tool as deleteDossierEntry } from "./tools/delete_dossier_entry.js";
 import { tool as getDataObjectsBulk } from "./tools/get_data_objects_bulk.js";
 import { tool as restoreDataObject } from "./tools/restore_data_object.js";
+import { tool as getTicketServiceAgreements } from "./tools/get_ticket_service_agreements.js";
+import { tool as myOpenTasks } from "./flows/my_open_tasks.js";
+import { tool as taskOverview } from "./flows/task_overview.js";
+import { tool as createTask } from "./flows/create_task.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -76,6 +80,10 @@ export const REGISTRY: ToolDef[] = [
   createDossierEntry,
   deleteDossierEntry,
   restoreDataObject,
+  getTicketServiceAgreements,
+  myOpenTasks,
+  taskOverview,
+  createTask,
 ];
 
 export interface RegisterOptions {

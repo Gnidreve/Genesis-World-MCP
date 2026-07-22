@@ -49,6 +49,13 @@ see no create/update/delete tools, that is why, not an error.
 6. **Tags**: user-assigned labels, system-wide (\`list_tags\`) and
    per-object (\`get_object_tags\`).
 
+## Flows (bundled multi-step tools — prefer these)
+
+- \`my_open_tasks\`: current user + their task list in one call (due
+  window via \`dueWithinDays\`, saved view via \`viewId\`).
+- \`task_overview\`: one task + its links + tags, one call.
+- \`create_task\`: create a task and link it to a target object, one call.
+
 ## Navigation patterns (cheapest path first)
 
 - **"Find X"** → \`smart_search\` (full-text, all types, supports

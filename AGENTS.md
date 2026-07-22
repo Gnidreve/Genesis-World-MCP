@@ -11,10 +11,10 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P2 done** (22 read tools incl. bulk
-load; registry, modes, annotations, readme + metadata resources; generic
-write layer with 10 mutating tools). **P3 (task flows) is the active work
-front.**
+stable item IDs). Current state: **P0–P3 done** (registry, modes,
+annotations, readme + metadata resources, generic write layer, task flows).
+36 tools: 25 read / 11 write, 3 of them flows. **P4 (address flows) is the
+active work front.**
 
 ## Standing orders — READ FIRST
 
@@ -106,7 +106,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (32 atomic: 22 read / 10 write)
+## Currently implemented tools (36: 25 read / 11 write; 3 flows)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -132,6 +132,23 @@ src/
 | 19 | `get_full_data_objects`            | GET  | `/v7.0/type/{dataObjectType}/full`                                |
 | 20 | `list_data_objects_by_view_full`   | GET  | `/v7.0/type/{dataObjectType}/view/{viewID}/full`                  |
 | 21 | `get_data_objects_bulk`            | POST | `/v7.0/type/{dataObjectType}/records` (**read** despite POST)     |
+| 21a| `get_ticket_service_agreements`    | GET  | `/v7.0/type/task/ticket/serviceagreements`                        |
+
+### Flows (`kind: "flow"` — one tool, several upstream calls)
+
+| Flow            | Mode  | Bundles |
+|-----------------|-------|---------|
+| `my_open_tasks` | read  | `GET /user/self` + `GET /type/task/list` (or `…/view/{id}/list` with `whereString`); `dueWithinDays` → `interval-end` |
+| `task_overview` | read  | task record + `…/link/list` + `…/tags`, fetched in parallel |
+| `create_task`   | write | `POST /type/task` + optional `POST …/link` to a target object; if the create response yields no GGUID, the flow returns a warning instead of guessing |
+
+Flow rules: flows never hide destructive steps (a flow that writes is
+`mode: "write"`); sub-results are embedded as parsed JSON in one combined
+document (`src/flows/util.ts`); **no hardcoded guessed field names** — the
+spec defines no per-type field vocabulary (only `KEYWORD` is confirmed), so
+field semantics stay caller-provided, discoverable via
+`genesisworld://metadata/{objectType}`. That is also why ROADMAP item P3.4
+(typed `complete_task`) was dropped.
 
 ### Write tools (`mode: "write"` — hidden in read-only mode)
 
