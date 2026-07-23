@@ -20,6 +20,14 @@ in place; npm (`cas-genesis-world-mcp`) and Docker Hub
 triggered by pushing a `v*` tag (`NPM_TOKEN` / `DOCKERHUB_TOKEN` repo
 secrets already set). New work = new ROADMAP items first.
 
+**Release checklist (learned the hard way, 2026-07-23):** `package.json`'s
+`version` and the server's `version` string in `src/index.ts` must be
+bumped **in the same commit** that precedes a new `vX.Y.Z` tag, and must
+match the tag. `npm publish` fails outright if that version already
+exists on the registry (Docker Hub has no such guard — it happily
+overwrites a tag, so a forgotten bump fails silently there instead of
+loudly). Order: bump both version strings → commit → tag → push tag.
+
 ## Standing orders — READ FIRST
 
 1. **Docs stay in sync, always.** Any commit that adds/changes/removes a
