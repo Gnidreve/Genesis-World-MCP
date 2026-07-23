@@ -367,6 +367,17 @@ same env vars.
   values are quoted per RFC 7232. If other PUT endpoints (alarm, image,
   recurrence) turn out to enforce it too, apply the same pattern via
   `apiSend`'s `extraHeaders` parameter.
+- **`X-CAS-PRODUCT-KEY` is modeled as an auth *alternative*, required in
+  practice alongside.** `securitySchemes` lists `OAuth`, `Basic Auth`, and
+  `CAS Product Key` as three independent options
+  (`security: [{OAuth: []}, {"Basic Auth": []}, {"CAS Product Key": []}]`
+  — OpenAPI OR-semantics, each alone should suffice). Live installations
+  reportedly reject requests without the product key even when Basic Auth
+  is present — i.e. it's required *in addition to*, not *instead of*,
+  Basic Auth (reported by the maintainer as HTTP 401 Unauthorized when
+  omitted, not independently reproduced against a live server here). This
+  is why `GENESISWORLD_PRODUCT_KEY` is a mandatory Environment (P10.1)
+  despite the spec presenting it as optional/alternative.
 
 ## Out of scope
 

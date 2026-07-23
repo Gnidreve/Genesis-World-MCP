@@ -38,6 +38,7 @@ describe("ensureConfig — mandatory Environments", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("GENESISWORLD_PRODUCT_KEY")
     );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("401"));
   });
 
   it("warns but does not exit when Basic Auth credentials are missing", async () => {

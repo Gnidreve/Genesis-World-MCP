@@ -24,7 +24,9 @@ export function ensureConfig(): void {
     console.error(
       "[cas-genesisworld-mcp] FATAL: GENESISWORLD_PRODUCT_KEY is not set. " +
         "It is mandatory and is sent as the X-CAS-PRODUCT-KEY header on " +
-        "every request."
+        "every request — even with Basic Auth credentials present, the " +
+        "genesisWorld server is reported to reject requests without it " +
+        "(HTTP 401 Unauthorized)."
     );
     process.exit(1);
   }
