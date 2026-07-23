@@ -11,7 +11,7 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P8 done** (P6.4 OAuth2 blocked —
+stable item IDs). Current state: **P0–P8, P10 done** (P6.4 OAuth2 blocked —
 no OAuth2-capable installation for ~6 months; P9 document upload is the
 next planned phase). 67 tools: 41 read / 26 write, 7 of them flows;
 flow results are compacted by default (P7); result cap + request logging
@@ -45,13 +45,33 @@ loudly). Order: bump both version strings → commit → tag → push tag.
 4. **Never document unimplemented features as existing.** README.md
    describes what `main` actually does; the future lives in ROADMAP.md.
 
+## Launch Options vs. Environments (maintainer decision, 2026-07-23)
+
+Two disjoint configuration categories. **A setting is one or the other,
+never both** — this is a hard rule, not a style preference:
+
+- **Environments** (env vars, `GENESISWORLD_*` / `MCP_*`) describe *facts
+  about the deployment*: where the API lives, who connects, how the
+  server binds, operational tuning (result cap, logging verbosity). They
+  never change which tools are registered or how a tool behaves.
+- **Launch options** (CLI flags, parsed from `process.argv`) toggle
+  *behavior* at process start. They are read **only** from argv — never
+  mirrored as an environment variable, even for Docker convenience. Pass
+  them after the image name / entrypoint (`docker run … image --read-only`;
+  the Dockerfile's `ENTRYPOINT ["node", "dist/index.js"]` forwards `CMD`
+  args straight through).
+
+Currently: **one** launch option (`--read-only`), rest are Environments.
+When adding a new mode-like toggle, classify it against this rule before
+implementing — don't default to an env var out of habit.
+
 ## Operating modes (implemented — `isReadOnly` in `src/registry.ts`)
 
 - **Default: read-write.** All registered tools are available, including
-  mutating ones (once they exist, P2+).
-- **`--read-only`** CLI flag **or** `GENESISWORLD_READ_ONLY=true` env var
-  activates read-only mode: tools declared `mode: "write"` are **not
-  registered at all** (invisible to the client, not merely rejected).
+  mutating ones.
+- **`--read-only`** launch option (CLI flag only, see above) activates
+  read-only mode: tools declared `mode: "write"` are **not registered at
+  all** (invisible to the client, not merely rejected).
 - Classification is **semantic, not by HTTP verb**:
   - `mode: "read"` — no server-side state change. This includes some POST
     endpoints, e.g. `POST /v7.0/type/{t}/records` (bulk load by GUIDs),
@@ -266,19 +286,20 @@ query params.
 6. Update `README.md`, the tool table above, and the ROADMAP item status —
    same commit (standing order #1).
 
-## Configuration (runtime, not hardcoded)
+## Configuration — Environments (runtime, not hardcoded)
 
-All connection details are passed at startup via environment variables. The
-demo URL in the spec (`http://demo.cas.de/genesisrest.svc`) is **only an
-example** and is never baked into the code.
+All connection/deployment facts are passed at startup via environment
+variables (see "Launch Options vs. Environments" above — no toggle here
+duplicates a CLI flag). The demo URL in the spec
+(`http://demo.cas.de/genesisrest.svc`) is **only an example** and is never
+baked into the code.
 
 | Variable                   | Required | Purpose                                          |
 | -------------------------- | -------- | ------------------------------------------------ |
-| `GENESISWORLD_BASE_URL`    | yes      | Base URL of the REST service (no trailing slash) |
+| `GENESISWORLD_BASE_URL`    | **yes**  | Base URL of the REST service (no trailing slash) |
+| `GENESISWORLD_PRODUCT_KEY` | **yes**  | Sent as `X-CAS-PRODUCT-KEY` header on every request (maintainer decision, 2026-07-23: mandatory, not optional — `ensureConfig` exits like it does for `BASE_URL`) |
 | `GENESISWORLD_USERNAME`    | yes\*    | Basic Auth user                                  |
 | `GENESISWORLD_PASSWORD`    | yes\*    | Basic Auth password                              |
-| `GENESISWORLD_PRODUCT_KEY` | no       | Sent as `X-CAS-PRODUCT-KEY` header only if set   |
-| `GENESISWORLD_READ_ONLY`   | no       | `true` → read-only mode (equivalent: `--read-only` CLI flag) |
 | `GENESISWORLD_MAX_RESULT_CHARS` | no  | Result cap in chars (default 60000; `0` disables truncation) |
 | `GENESISWORLD_QUIET`       | no       | `true` → suppress per-request stderr logging      |
 | `MCP_TRANSPORT`            | no       | `http` (default in Docker) or `stdio`            |
@@ -286,8 +307,12 @@ example** and is never baked into the code.
 | `MCP_PORT`                 | no       | Bind port for HTTP mode (default: `3000`)        |
 
 \* Auth scheme for now is **HTTP Basic**. The spec also documents OAuth2
-(`authorizationCode`) — planned as P6.4. `X-CAS-PRODUCT-KEY` is supported
-optionally because some installations require it alongside Basic.
+(`authorizationCode`) — planned as P6.4, blocked on a live OAuth2-capable
+installation.
+
+**`GENESISWORLD_READ_ONLY` does not exist.** Read-only is a launch option
+(`--read-only`) only — removed as an env var 2026-07-23 (hard break, no
+deprecation window; adoption was minimal at the time). Do not re-add it.
 
 ## Deployment (Docker HTTP)
 
@@ -301,9 +326,18 @@ docker run -d \
   --name cas-genesisworld-mcp \
   -p 8084:3000 \
   -e GENESISWORLD_BASE_URL="http://your-genesisworld-server/genesisrest.svc" \
+  -e GENESISWORLD_PRODUCT_KEY="your-product-key" \
   -e GENESISWORLD_USERNAME="your-user" \
   -e GENESISWORLD_PASSWORD="your-password" \
   cas-genesisworld-mcp
+
+# Read-only: append the launch option after the image name (no env-var form exists)
+docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://your-genesisworld-server/genesisrest.svc" \
+  -e GENESISWORLD_PRODUCT_KEY="your-product-key" \
+  -e GENESISWORLD_USERNAME="your-user" \
+  -e GENESISWORLD_PASSWORD="your-password" \
+  cas-genesisworld-mcp --read-only
 ```
 
 The container starts on port **3000** internally (exposed as 8084) and

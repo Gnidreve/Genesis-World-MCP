@@ -99,20 +99,24 @@ describe("registry", () => {
   });
 });
 
-describe("read-only mode resolution (P1.2)", () => {
+describe("read-only mode resolution — launch option only (P1.2)", () => {
   it("via --read-only CLI flag", () => {
-    expect(isReadOnly(["node", "index.js", "--read-only"], {})).toBe(true);
+    expect(isReadOnly(["node", "index.js", "--read-only"])).toBe(true);
   });
 
-  it("via GENESISWORLD_READ_ONLY env var (case/whitespace tolerant)", () => {
-    expect(isReadOnly([], { GENESISWORLD_READ_ONLY: "true" })).toBe(true);
-    expect(isReadOnly([], { GENESISWORLD_READ_ONLY: " True " })).toBe(true);
-    expect(isReadOnly([], { GENESISWORLD_READ_ONLY: "false" })).toBe(false);
-    expect(isReadOnly([], { GENESISWORLD_READ_ONLY: "" })).toBe(false);
+  it("is NOT resolved via any environment variable", () => {
+    const prev = process.env.GENESISWORLD_READ_ONLY;
+    process.env.GENESISWORLD_READ_ONLY = "true";
+    try {
+      expect(isReadOnly(["node", "index.js"])).toBe(false);
+    } finally {
+      if (prev === undefined) delete process.env.GENESISWORLD_READ_ONLY;
+      else process.env.GENESISWORLD_READ_ONLY = prev;
+    }
   });
 
   it("defaults to read-write", () => {
-    expect(isReadOnly(["node", "index.js"], {})).toBe(false);
+    expect(isReadOnly(["node", "index.js"])).toBe(false);
   });
 });
 

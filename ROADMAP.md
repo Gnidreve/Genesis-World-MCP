@@ -151,6 +151,19 @@ before implementation.
 | P9.2 | Temp file upload + standalone file create | planned | P9.1 | `POST /v7.0/type/document/file/temp`, `POST /v7.0/type/document/file` |
 | P9.3 | File locking (lock/unlock) + version restore | planned | P9.1 | `PUT/DELETE …/file/lock`, `POST …/file/version/{documentVersion}/restore` |
 
+## P10 — Launch Options vs. Environments cleanup `done`
+
+Maintainer decision, 2026-07-23: config settings are exactly one of
+"Environment" (deployment fact, env var) or "Launch option" (behavior
+toggle, CLI flag) — never both. Corrects the duplication introduced by
+P1.2, which gave read-only mode both an env var and a CLI flag.
+
+| ID    | Item | Status | Deps | Ops |
+|-------|------|--------|------|-----|
+| P10.1 | `GENESISWORLD_PRODUCT_KEY` becomes mandatory (was optional) — `ensureConfig` now exits if unset, same as `BASE_URL` | done | — | — |
+| P10.2 | `GENESISWORLD_READ_ONLY` env var removed (hard break, no deprecation window — minimal adoption at the time). `--read-only` launch option is now the only way to activate read-only mode | done | P1.2 | — |
+| P10.3 | `MCP_TRANSPORT` / `MCP_HOST` / `MCP_PORT` reaffirmed as Environments, not converted to launch options (maintainer decision: they're network/bind facts, not behavior switches) | done | — | — |
+
 ---
 
 ## Coverage ledger

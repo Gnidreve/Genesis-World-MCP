@@ -25,11 +25,29 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 
 ## Modes
 
-- **Default: read-write.** All 32 tools are registered.
-- **Read-only:** start with the `--read-only` CLI flag or
-  `GENESISWORLD_READ_ONLY=true`. The 10 mutating tools are then not
-  registered at all (22 tools remain). Classification is semantic, not by
-  HTTP verb — e.g. the POST-based bulk load stays available.
+- **Default: read-write.** All 67 tools are registered.
+- **Read-only:** start with the `--read-only` **launch option** (CLI flag
+  only — deliberately not an environment variable, see "Launch options vs.
+  Environments" below). The 26 mutating tools are then not registered at
+  all (41 tools remain). Classification is semantic, not by HTTP verb —
+  e.g. the POST-based bulk load stays available.
+
+## Launch options vs. Environments
+
+Two distinct kinds of configuration, kept strictly separate — no setting
+exists as both:
+
+- **Environments** (env vars) describe *facts about the deployment*:
+  where the API lives, who connects, how the server binds. They never
+  toggle behavior.
+- **Launch options** (CLI flags) toggle *behavior* at startup. They are
+  never also available as an environment variable.
+
+| Kind | Name | Purpose |
+|------|------|---------|
+| Launch option | `--read-only` | Registers only `mode: "read"` tools |
+
+(See "Configuration" below for the full Environments list.)
 
 ## Resources
 
@@ -150,20 +168,28 @@ npm run build
 
 This compiles `src/` → `dist/`.
 
-## Configuration
+## Configuration (Environments)
 
-Connection details are read from environment variables at startup. The demo URL
-is only an example — set your own base URL.
+Connection/deployment facts are read from environment variables at startup.
+The demo URL is only an example — set your own base URL. Behavior toggles
+(currently just `--read-only`) are **not** here — see "Launch options"
+above; there is intentionally no env-var equivalent for any of them.
 
 | Variable                   | Required | Example                                   |
 | -------------------------- | -------- | ----------------------------------------- |
-| `GENESISWORLD_BASE_URL`    | yes      | `http://demo.cas.de/genesisrest.svc`      |
-| `GENESISWORLD_USERNAME`    | yes      | `myuser`                                  |
-| `GENESISWORLD_PASSWORD`    | yes      | `mypassword`                              |
-| `GENESISWORLD_PRODUCT_KEY` | no       | sent as `X-CAS-PRODUCT-KEY` if provided   |
-| `GENESISWORLD_READ_ONLY`   | no       | `true` = read-only mode (same as `--read-only`) |
+| `GENESISWORLD_BASE_URL`    | **yes**  | `http://demo.cas.de/genesisrest.svc`      |
+| `GENESISWORLD_PRODUCT_KEY` | **yes**  | sent as `X-CAS-PRODUCT-KEY` on every request |
+| `GENESISWORLD_USERNAME`    | yes\*    | `myuser`                                  |
+| `GENESISWORLD_PASSWORD`    | yes\*    | `mypassword`                              |
+| `MCP_TRANSPORT`            | no       | `http` (default in Docker) or `stdio`     |
+| `MCP_HOST`                 | no       | Bind host for HTTP mode (default: `0.0.0.0`) |
+| `MCP_PORT`                 | no       | Bind port for HTTP mode (default: `3000`) |
 | `GENESISWORLD_MAX_RESULT_CHARS` | no  | Result cap in chars (default 60000; `0` = off)  |
 | `GENESISWORLD_QUIET`       | no       | `true` = no per-request stderr logging          |
+
+\* Basic Auth credentials — required in practice for any real request to
+succeed, but the server starts without them (with a warning) since some
+installations may authenticate differently at the network layer.
 
 ## Run
 
@@ -176,30 +202,43 @@ docker build -t cas-genesisworld-mcp .
 # Run with Streamable HTTP on port 8084
 docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
   -e GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+  -e GENESISWORLD_PRODUCT_KEY="your-product-key" \
   -e GENESISWORLD_USERNAME="myuser" \
   -e GENESISWORLD_PASSWORD="mypassword" \
   cas-genesisworld-mcp
 
 # The MCP endpoint is now at http://localhost:8084/mcp
+
+# Read-only mode: append the --read-only launch option (there is no env-var
+# equivalent — launch options are CLI-only by design, see "Launch options
+# vs. Environments" above)
+docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+  -e GENESISWORLD_PRODUCT_KEY="your-product-key" \
+  -e GENESISWORLD_USERNAME="myuser" \
+  -e GENESISWORLD_PASSWORD="mypassword" \
+  cas-genesisworld-mcp --read-only
 ```
 
 ### Option 2: npx (development)
 
 ```bash
 GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+GENESISWORLD_PRODUCT_KEY="your-product-key" \
 GENESISWORLD_USERNAME="myuser" \
 GENESISWORLD_PASSWORD="mypassword" \
 npx .
 ```
 
 (`npx .` resolves the `bin` entry in `package.json`. `node dist/index.js`
-works identically.)
+works identically. Append `--read-only` to either for read-only mode.)
 
 ### Option 3: HTTP mode via env var
 
 ```bash
 MCP_TRANSPORT=http MCP_PORT=3000 MCP_HOST=0.0.0.0 \
 GENESISWORLD_BASE_URL="http://demo.cas.de/genesisrest.svc" \
+GENESISWORLD_PRODUCT_KEY="your-product-key" \
 GENESISWORLD_USERNAME="myuser" \
 GENESISWORLD_PASSWORD="mypassword" \
 node dist/index.js
@@ -231,6 +270,7 @@ Point your MCP client at the server. You have two options:
       "args": ["-y", "/absolute/path/to/cas-genesisworld-mcp"],
       "env": {
         "GENESISWORLD_BASE_URL": "http://demo.cas.de/genesisrest.svc",
+        "GENESISWORLD_PRODUCT_KEY": "your-product-key",
         "GENESISWORLD_USERNAME": "myuser",
         "GENESISWORLD_PASSWORD": "mypassword"
       }

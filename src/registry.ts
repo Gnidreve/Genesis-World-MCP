@@ -152,15 +152,13 @@ export interface RegisterOptions {
   readOnly: boolean;
 }
 
-/** Resolve read-only mode from CLI flag `--read-only` or GENESISWORLD_READ_ONLY=true. */
-export function isReadOnly(
-  argv: string[] = process.argv,
-  env: NodeJS.ProcessEnv = process.env
-): boolean {
-  return (
-    argv.includes("--read-only") ||
-    (env.GENESISWORLD_READ_ONLY ?? "").trim().toLowerCase() === "true"
-  );
+/**
+ * Resolve read-only mode from the `--read-only` CLI flag — a launch option,
+ * deliberately not also an environment variable (see AGENTS.md "Launch
+ * Options vs. Environments").
+ */
+export function isReadOnly(argv: string[] = process.argv): boolean {
+  return argv.includes("--read-only");
 }
 
 /** Register all tools allowed by the launch mode; returns what was registered. */

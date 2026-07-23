@@ -20,6 +20,15 @@ export function ensureConfig(): void {
     process.exit(1);
   }
 
+  if (!PRODUCT_KEY) {
+    console.error(
+      "[cas-genesisworld-mcp] FATAL: GENESISWORLD_PRODUCT_KEY is not set. " +
+        "It is mandatory and is sent as the X-CAS-PRODUCT-KEY header on " +
+        "every request."
+    );
+    process.exit(1);
+  }
+
   if (!USERNAME && !PASSWORD) {
     console.error(
       "[cas-genesisworld-mcp] WARNING: no Basic Auth credentials set " +
@@ -40,9 +49,7 @@ function authHeaders(): Record<string, string> {
     const token = Buffer.from(`${USERNAME}:${PASSWORD}`).toString("base64");
     headers["Authorization"] = `Basic ${token}`;
   }
-  if (PRODUCT_KEY) {
-    headers["X-CAS-PRODUCT-KEY"] = PRODUCT_KEY;
-  }
+  headers["X-CAS-PRODUCT-KEY"] = PRODUCT_KEY ?? "";
   return headers;
 }
 

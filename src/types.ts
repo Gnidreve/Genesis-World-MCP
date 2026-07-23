@@ -11,7 +11,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 /**
  * Semantic classification — NOT the HTTP verb. A POST endpoint that only
  * reads (e.g. bulk load, duplicate check) is still `mode: "read"`.
- * In read-only mode (`--read-only` / GENESISWORLD_READ_ONLY=true) only
+ * In read-only mode (launch option `--read-only`) only
  * `mode: "read"` tools are registered.
  */
 export type ToolMode = "read" | "write";

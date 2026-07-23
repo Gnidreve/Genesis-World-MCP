@@ -4,15 +4,21 @@
  *
  * Exposes the CAS genesisWorld REST API v7.0 as MCP tools, flows, and
  * resources. Tools are collected in src/registry.ts and registered filtered
- * by launch mode: with `--read-only` (or GENESISWORLD_READ_ONLY=true) only
- * tools declared `mode: "read"` are registered.
+ * by launch mode: with the `--read-only` launch option, only tools declared
+ * `mode: "read"` are registered.
  *
- * Configuration is provided at startup via environment variables:
- *   GENESISWORLD_BASE_URL   (required)  e.g. http://demo.cas.de/genesisrest.svc
- *   GENESISWORLD_USERNAME   (Basic Auth user)
- *   GENESISWORLD_PASSWORD   (Basic Auth password)
- *   GENESISWORLD_PRODUCT_KEY (optional) sent as X-CAS-PRODUCT-KEY if set
- *   GENESISWORLD_READ_ONLY  (optional)  "true" = read-only mode
+ * Configuration is split by kind (see AGENTS.md "Launch Options vs.
+ * Environments"):
+ *
+ * Environments (connection/config facts, env vars only):
+ *   GENESISWORLD_BASE_URL    (required) e.g. http://demo.cas.de/genesisrest.svc
+ *   GENESISWORLD_USERNAME    Basic Auth user
+ *   GENESISWORLD_PASSWORD    Basic Auth password
+ *   GENESISWORLD_PRODUCT_KEY (required) sent as X-CAS-PRODUCT-KEY on every request
+ *   MCP_TRANSPORT / MCP_HOST / MCP_PORT  server bind config
+ *
+ * Launch options (behavior switches, CLI flags only, never env vars):
+ *   --read-only               registers only mode:"read" tools
  *
  * The base URL is NOT hardcoded — the demo URL above is only an example.
  *
@@ -41,7 +47,7 @@ const INSTRUCTIONS =
 
 function buildServer(readOnly: boolean): McpServer {
   const server = new McpServer(
-    { name: "cas-genesisworld-mcp", version: "0.9.1" },
+    { name: "cas-genesisworld-mcp", version: "0.9.2" },
     { instructions: INSTRUCTIONS }
   );
   registerTools(server, { readOnly });

@@ -1,5 +1,66 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { jsonResult, errorResult, capResult } from "./lib.js";
+
+describe("ensureConfig — mandatory Environments", () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  const ORIGINAL_ENV = { ...process.env };
+
+  beforeEach(() => {
+    vi.resetModules();
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+    exitSpy.mockRestore();
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  it("exits when GENESISWORLD_BASE_URL is missing", async () => {
+    delete process.env.GENESISWORLD_BASE_URL;
+    process.env.GENESISWORLD_PRODUCT_KEY = "key";
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("GENESISWORLD_BASE_URL")
+    );
+  });
+
+  it("exits when GENESISWORLD_PRODUCT_KEY is missing (mandatory, not optional)", async () => {
+    process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    delete process.env.GENESISWORLD_PRODUCT_KEY;
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("GENESISWORLD_PRODUCT_KEY")
+    );
+  });
+
+  it("warns but does not exit when Basic Auth credentials are missing", async () => {
+    process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    process.env.GENESISWORLD_PRODUCT_KEY = "key";
+    delete process.env.GENESISWORLD_USERNAME;
+    delete process.env.GENESISWORLD_PASSWORD;
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig();
+    expect(exitSpy).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("WARNING"));
+  });
+
+  it("passes cleanly with all required config present", async () => {
+    process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    process.env.GENESISWORLD_PRODUCT_KEY = "key";
+    process.env.GENESISWORLD_USERNAME = "u";
+    process.env.GENESISWORLD_PASSWORD = "p";
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+});
 
 describe("apiSend", () => {
   let apiSend: typeof import("./lib.js").apiSend;
@@ -7,6 +68,7 @@ describe("apiSend", () => {
 
   beforeAll(async () => {
     process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    process.env.GENESISWORLD_PRODUCT_KEY = "test-product-key";
     vi.resetModules();
     ({ apiSend } = await import("./lib.js"));
     vi.stubGlobal("fetch", fetchMock);
@@ -36,6 +98,12 @@ describe("apiSend", () => {
     const [, init] = fetchMock.mock.calls[0];
     expect(init.headers["Content-Type"]).toBe("text/plain");
     expect(init.body).toBe("hello");
+  });
+
+  it("always sends X-CAS-PRODUCT-KEY", async () => {
+    await apiSend("POST", "/p", {}, {});
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["X-CAS-PRODUCT-KEY"]).toBe("test-product-key");
   });
 
   it("merges extra headers (e.g. If-Match) into the request", async () => {
