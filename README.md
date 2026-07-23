@@ -4,6 +4,9 @@
 
 # cas-genesisworld-mcp
 
+[![npm](https://img.shields.io/npm/v/cas-genesis-world-mcp?logo=npm&label=cas-genesis-world-mcp)](https://www.npmjs.com/package/cas-genesis-world-mcp)
+[![CI](https://github.com/Gnidreve/Genesis-World-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/Gnidreve/Genesis-World-MCP/actions/workflows/ci.yml)
+
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
