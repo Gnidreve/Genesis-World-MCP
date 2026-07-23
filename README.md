@@ -5,6 +5,7 @@
 # cas-genesisworld-mcp
 
 [![npm](https://img.shields.io/npm/v/cas-genesis-world-mcp?logo=npm&label=cas-genesis-world-mcp)](https://www.npmjs.com/package/cas-genesis-world-mcp)
+[![Docker](https://img.shields.io/docker/v/vaatu/cas-genesis-world-mcp?logo=docker&label=vaatu%2Fcas-genesis-world-mcp)](https://hub.docker.com/r/vaatu/cas-genesis-world-mcp)
 [![CI](https://github.com/Gnidreve/Genesis-World-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/Gnidreve/Genesis-World-MCP/actions/workflows/ci.yml)
 
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
@@ -273,18 +274,21 @@ new tool means:
 Each API tool gets 4 tests: registration name, endpoint path + params,
 success response, and error handling.
 
-## Publishing (npm)
+## Publishing (npm + Docker Hub)
 
-The package is `cas-genesis-world-mcp` (name is unclaimed on the npm
-registry). Publishing is automated —
-[`.github/workflows/publish.yml`](./.github/workflows/publish.yml) runs
-tests and publishes whenever a version tag is pushed. One-time setup:
+Both release channels are automated off the same trigger: pushing a
+version tag runs tests, then publishes.
 
-1. Create an npm account at npmjs.com (if you don't have one).
-2. npmjs.com → profile → **Access Tokens** → *Generate New Token* →
-   **Automation** — copy the token.
-3. GitHub repo → *Settings* → *Secrets and variables* → *Actions* →
-   *New repository secret*: name `NPM_TOKEN`, value = the token.
+- **npm**: package `cas-genesis-world-mcp` —
+  [`.github/workflows/publish.yml`](./.github/workflows/publish.yml).
+  One-time setup: npmjs.com → profile → **Access Tokens** → *Generate New
+  Token* → **Automation** → copy it → GitHub repo → *Settings* → *Secrets
+  and variables* → *Actions* → new repository secret `NPM_TOKEN`.
+- **Docker Hub**: image `vaatu/cas-genesis-world-mcp` (tagged with the
+  version and `latest`) —
+  [`.github/workflows/docker-publish.yml`](./.github/workflows/docker-publish.yml).
+  One-time setup: hub.docker.com → *Account Settings* → *Security* →
+  *New Access Token* → copy it → GitHub repo secret `DOCKERHUB_TOKEN`.
 
 Then every release is just:
 
@@ -292,7 +296,9 @@ Then every release is just:
 git tag v0.9.0 && git push origin v0.9.0
 ```
 
-(Keep the tag in sync with the `version` in `package.json`.)
+(Keep the tag in sync with the `version` in `package.json`. If the Docker
+Hub account is ever renamed away from `vaatu`, update the `IMAGE` env var
+in `docker-publish.yml`.)
 
 ## Source layout
 

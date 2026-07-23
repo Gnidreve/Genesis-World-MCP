@@ -15,8 +15,10 @@ stable item IDs). Current state: **P0–P8 done** (P6.4 OAuth2 blocked —
 no OAuth2-capable installation for ~6 months; P9 document upload is the
 next planned phase). 67 tools: 41 read / 26 write, 7 of them flows;
 flow results are compacted by default (P7); result cap + request logging
-in place; npm publish pipeline ready (`cas-genesis-world-mcp`, needs the
-`NPM_TOKEN` secret once). New work = new ROADMAP items first.
+in place; npm (`cas-genesis-world-mcp`) and Docker Hub
+(`vaatu/cas-genesis-world-mcp`) publish pipelines are live, both
+triggered by pushing a `v*` tag (`NPM_TOKEN` / `DOCKERHUB_TOKEN` repo
+secrets already set). New work = new ROADMAP items first.
 
 ## Standing orders — READ FIRST
 

@@ -121,7 +121,7 @@ Deliberately after stage 1 (maintainer decision, 2026-07-22).
 | P6.3 | Object permissions read/write | done | P1.2 | `GET …/permission/full`, `POST …/permission`, `DELETE …/permission/{permissionGGUID}` |
 | P6.4 | OAuth2 authorization-code support as alternative to Basic Auth | blocked | — | — (no OAuth2-capable installation exists yet; expected within ~6 months, revisit then) |
 | P6.5 | Structured logging + request timing to stderr | done | — | — (method/path/status/duration per call; GENESISWORLD_QUIET=true disables) |
-| P6.6 | npm publish / release pipeline | done | — | — (package renamed `cas-genesis-world-mcp` — name is free on the registry; `.github/workflows/publish.yml` publishes on tag `v*`; maintainer must add the `NPM_TOKEN` repo secret once, see README "Publishing") |
+| P6.6 | npm + Docker Hub publish / release pipeline | done | — | — (package renamed `cas-genesis-world-mcp`, free on the registry; image `vaatu/cas-genesis-world-mcp`. Both publish on tag `v*` via `.github/workflows/publish.yml` / `docker-publish.yml`; maintainer added `NPM_TOKEN` and `DOCKERHUB_TOKEN` repo secrets, see README "Publishing") |
 
 ## P7 — Response shaping `done`
 
