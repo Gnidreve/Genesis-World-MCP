@@ -48,10 +48,16 @@ export function registerCreateTask(server: McpServer): void {
           .string()
           .optional()
           .describe("Optional link attribute, e.g. 'PRIMARY'."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         const createdText = await apiSend(
           "POST",
           "/v7.0/type/task",
@@ -61,12 +67,12 @@ export function registerCreateTask(server: McpServer): void {
         const created = parseMaybe(createdText);
 
         if (!args.linkToType || !args.linkToGGUID) {
-          return flowResult({ task: created });
+          return fr({ task: created });
         }
 
         const gguid = extractGGUID(created);
         if (!gguid) {
-          return flowResult({
+          return fr({
             task: created,
             warning:
               "Task created, but no GGUID could be extracted from the " +
@@ -90,7 +96,7 @@ export function registerCreateTask(server: McpServer): void {
           { fields: linkFields }
         );
 
-        return flowResult({ task: created, link: parseMaybe(linkText) });
+        return fr({ task: created, link: parseMaybe(linkText) });
       } catch (err) {
         return errorResult(err);
       }

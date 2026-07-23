@@ -71,6 +71,12 @@ import { tool as createAppointmentSafe } from "./flows/create_appointment_safe.j
 import { tool as listObjectPermissions } from "./tools/list_object_permissions.js";
 import { tool as setObjectPermission } from "./tools/set_object_permission.js";
 import { tool as deleteObjectPermission } from "./tools/delete_object_permission.js";
+import { tool as listDistributions } from "./tools/list_distributions.js";
+import { tool as listDistributionAddresses } from "./tools/list_distribution_addresses.js";
+import { tool as addDistributionAddresses } from "./tools/add_distribution_addresses.js";
+import { tool as removeDistributionAddress } from "./tools/remove_distribution_address.js";
+import { tool as convertLead } from "./tools/convert_lead.js";
+import { tool as recalculateOpportunityPositions } from "./tools/recalculate_opportunity_positions.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -134,6 +140,12 @@ export const REGISTRY: ToolDef[] = [
   listObjectPermissions,
   setObjectPermission,
   deleteObjectPermission,
+  listDistributions,
+  listDistributionAddresses,
+  addDistributionAddresses,
+  removeDistributionAddress,
+  convertLead,
+  recalculateOpportunityPositions,
 ];
 
 export interface RegisterOptions {

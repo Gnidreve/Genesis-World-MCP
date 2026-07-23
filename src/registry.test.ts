@@ -10,10 +10,10 @@ import { createMockServer } from "./__tests__/test-utils.js";
 import type { ToolDef } from "./types.js";
 
 describe("registry", () => {
-  it("contains 61 entries (39 read / 22 write; 7 of them flows)", () => {
-    expect(REGISTRY).toHaveLength(61);
-    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(39);
-    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(22);
+  it("contains 67 entries (41 read / 26 write; 7 of them flows)", () => {
+    expect(REGISTRY).toHaveLength(67);
+    expect(REGISTRY.filter((t) => t.mode === "read")).toHaveLength(41);
+    expect(REGISTRY.filter((t) => t.mode === "write")).toHaveLength(26);
     expect(REGISTRY.filter((t) => t.kind === "flow").map((t) => t.name).sort()).toEqual([
       "contact_360",
       "create_address_safe",

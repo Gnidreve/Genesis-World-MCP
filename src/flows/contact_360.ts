@@ -53,10 +53,16 @@ export function registerContact360(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Include links (default true)."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         const base = `/v7.0/type/address/${encodeURIComponent(args.dataObjectGGUID)}`;
         const [addressText, dossierText, tagsText, linksText] = await Promise.all([
           apiGet(base, { fields: args.fields }),
@@ -75,7 +81,7 @@ export function registerContact360(server: McpServer): void {
             : apiGet(`${base}/link/list`, {}),
         ]);
 
-        return flowResult({
+        return fr({
           address: parseMaybe(addressText),
           dossier: dossierText === undefined ? undefined : parseMaybe(dossierText),
           tags: tagsText === undefined ? undefined : parseMaybe(tagsText),

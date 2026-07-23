@@ -7,12 +7,14 @@
 An [MCP](https://modelcontextprotocol.io) server for the **CAS genesisWorld
 REST Webservice v7.0**.
 
-**Current state:** 61 tools — 39 read / 22 write, including 7 native-type
+**Current state:** 67 tools — 41 read / 26 write, including 7 native-type
 **flows** for Aufgaben/tasks, Adressen/contacts, and Termine/appointments
 (duplicate-safe address creation, conflict-safe appointment creation, 360°
-contact view), plus document/email reads and permission management — gated
-by a `--read-only` launch mode, with a configurable result cap and request
-logging. See the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
+contact view), plus document/email reads, distribution lists, lead
+conversion, and permission management — gated by a `--read-only` launch
+mode. Flow results are compacted by default (null/empty fields pruned via
+the `compact` param), with a configurable result cap and request logging.
+See the machine-readable plan in [`ROADMAP.md`](./ROADMAP.md).
 
 The full upstream API is committed as [`swagger.json`](./swagger.json) (cross-
 reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
@@ -37,11 +39,13 @@ reference). Working rules and architecture live in [`AGENTS.md`](./AGENTS.md).
 - `genesisworld://views/{objectType}` — saved views of one type (template,
   e.g. `genesisworld://views/TASK`). Cached 15 min.
 
-## Tools (61)
+## Tools (67)
 
 ### Flows (7)
 
-One tool call, several upstream calls bundled server-side:
+One tool call, several upstream calls bundled server-side. All flows
+accept `compact` (default `true`) — null/empty fields are pruned from the
+combined result:
 
 | Flow            | Mode  | What it does |
 |-----------------|-------|--------------|
@@ -92,8 +96,10 @@ One tool call, several upstream calls bundled server-side:
 |21k| `get_email_attachment`             | `GET /v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`     |
 |21l| `get_email_file`                   | `GET /v7.0/type/emailstore/{gguid}/file`                          |
 |21m| `list_object_permissions`          | `GET /v7.0/type/{t}/{gguid}/permission/full`                      |
+|21n| `list_distributions`               | `GET /v7.0/type/gwdistribution/list`                              |
+|21o| `list_distribution_addresses`      | `GET /v7.0/type/gwdistribution/{distributionGuid}/address/list`   |
 
-### Write (19 — hidden in read-only mode, plus the write flows)
+### Write (23 — hidden in read-only mode, plus the write flows)
 
 | # | Tool                    | Endpoint                                                             |
 |---|-------------------------|----------------------------------------------------------------------|
@@ -116,6 +122,10 @@ One tool call, several upstream calls bundled server-side:
 |38 | `delete_alarm`          | `DELETE /v7.0/type/{t}/{gguid}/alarm/self`                           |
 |39 | `set_object_permission` | `POST /v7.0/type/{t}/{gguid}/permission`                             |
 |40 | `delete_object_permission` | `DELETE /v7.0/type/{t}/{gguid}/permission/{permissionGGUID}`      |
+|41 | `add_distribution_addresses`  | `POST /v7.0/type/gwdistribution/{distributionGuid}/address`    |
+|42 | `remove_distribution_address` | `DELETE /v7.0/type/gwdistribution/{distributionGuid}/address/{addressGGUID}` |
+|43 | `convert_lead`          | `POST /v7.0/type/gwsllead/{dataObjectGGUID}/convert`                 |
+|44 | `recalculate_opportunity_positions` | `PUT /v7.0/type/gwopportunitypos/recalculatevalues`      |
 
 See [`AGENTS.md`](./AGENTS.md) for full descriptions, parameter details,
 and categories.
@@ -259,6 +269,27 @@ new tool means:
 
 Each API tool gets 4 tests: registration name, endpoint path + params,
 success response, and error handling.
+
+## Publishing (npm)
+
+The package is `cas-genesis-world-mcp` (name is unclaimed on the npm
+registry). Publishing is automated —
+[`.github/workflows/publish.yml`](./.github/workflows/publish.yml) runs
+tests and publishes whenever a version tag is pushed. One-time setup:
+
+1. Create an npm account at npmjs.com (if you don't have one).
+2. npmjs.com → profile → **Access Tokens** → *Generate New Token* →
+   **Automation** — copy the token.
+3. GitHub repo → *Settings* → *Secrets and variables* → *Actions* →
+   *New repository secret*: name `NPM_TOKEN`, value = the token.
+
+Then every release is just:
+
+```bash
+git tag v0.9.0 && git push origin v0.9.0
+```
+
+(Keep the tag in sync with the `version` in `package.json`.)
 
 ## Source layout
 

@@ -34,10 +34,16 @@ export function registerTaskOverview(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Include the task's tags (default true)."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         const base = `/v7.0/type/task/${encodeURIComponent(args.dataObjectGGUID)}`;
         const [taskText, linksText, tagsText] = await Promise.all([
           apiGet(base, { fields: args.fields }),
@@ -49,7 +55,7 @@ export function registerTaskOverview(server: McpServer): void {
             : apiGet(`${base}/tags`, {}),
         ]);
 
-        return flowResult({
+        return fr({
           task: parseMaybe(taskText),
           links: linksText === undefined ? undefined : parseMaybe(linksText),
           tags: tagsText === undefined ? undefined : parseMaybe(tagsText),

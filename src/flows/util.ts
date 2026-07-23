@@ -17,11 +17,39 @@ export function parseMaybe(text: string): unknown {
 
 import { capResult } from "../lib.js";
 
-/** Wrap a combined flow result object as an MCP text result. */
-export function flowResult(result: Record<string, unknown>) {
+/**
+ * Shape-agnostic compaction (ROADMAP P7): recursively drop null/undefined
+ * values, empty strings, empty arrays, and empty objects. genesisWorld
+ * payloads carry large numbers of null fields; pruning them cuts flow
+ * results drastically without any per-type schema knowledge. `false` and
+ * `0` are meaningful and always kept.
+ */
+export function prune(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const arr = value.map(prune).filter((v) => v !== undefined);
+    return arr.length > 0 ? arr : undefined;
+  }
+  if (typeof value === "object" && value !== null) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      const p = prune(v);
+      if (p !== undefined) out[k] = p;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+  if (value === null || value === undefined || value === "") return undefined;
+  return value;
+}
+
+/**
+ * Wrap a combined flow result object as an MCP text result.
+ * `compact` (default true) prunes null/empty noise from the payload.
+ */
+export function flowResult(result: Record<string, unknown>, compact = true) {
+  const shaped = compact ? (prune(result) as Record<string, unknown>) ?? {} : result;
   return {
     content: [
-      { type: "text" as const, text: capResult(JSON.stringify(result, null, 2)) },
+      { type: "text" as const, text: capResult(JSON.stringify(shaped, null, 2)) },
     ],
   };
 }

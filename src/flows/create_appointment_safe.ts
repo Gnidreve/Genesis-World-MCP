@@ -49,10 +49,16 @@ export function registerCreateAppointmentSafe(server: McpServer): void {
           .array(z.string())
           .optional()
           .describe("Participants to add after creation."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         let conflicts: unknown;
         if (args.userOids && args.userOids.length > 0) {
           if (!args.intervalStart || !args.intervalEnd) {
@@ -67,7 +73,7 @@ export function registerCreateAppointmentSafe(server: McpServer): void {
           });
           conflicts = parseMaybe(conflictText);
           if (looksLikeHits(conflicts) !== false && !args.force) {
-            return flowResult({
+            return fr({
               created: false,
               reason:
                 "Scheduling conflicts found — appointment NOT created. " +
@@ -86,12 +92,12 @@ export function registerCreateAppointmentSafe(server: McpServer): void {
         const created = parseMaybe(createdText);
 
         if (!args.participantGGUIDs || args.participantGGUIDs.length === 0) {
-          return flowResult({ created: true, appointment: created, conflicts });
+          return fr({ created: true, appointment: created, conflicts });
         }
 
         const gguid = extractGGUID(created);
         if (!gguid) {
-          return flowResult({
+          return fr({
             created: true,
             appointment: created,
             conflicts,
@@ -112,7 +118,7 @@ export function registerCreateAppointmentSafe(server: McpServer): void {
           participants[pg] = parseMaybe(pText);
         }
 
-        return flowResult({ created: true, appointment: created, conflicts, participants });
+        return fr({ created: true, appointment: created, conflicts, participants });
       } catch (err) {
         return errorResult(err);
       }

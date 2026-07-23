@@ -55,10 +55,16 @@ export function registerMyOpenTasks(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Include the resolved user profile (default true)."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         const intervalEnd =
           args.dueWithinDays !== undefined
             ? new Date(Date.now() + args.dueWithinDays * 86_400_000).toISOString()
@@ -82,7 +88,7 @@ export function registerMyOpenTasks(server: McpServer): void {
           apiGet(taskPath, taskParams),
         ]);
 
-        return flowResult({
+        return fr({
           user: userText === undefined ? undefined : parseMaybe(userText),
           tasks: parseMaybe(tasksText),
         });

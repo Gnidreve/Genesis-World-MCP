@@ -119,9 +119,37 @@ Deliberately after stage 1 (maintainer decision, 2026-07-22).
 | P6.1 | Response projection: opt-in field allowlists on list/full tools to cut token bloat | done | P1.1 | — (server-side `fields` params existed; added a global result cap: GENESISWORLD_MAX_RESULT_CHARS, default 60000, truncates with an actionable hint) |
 | P6.2 | Pagination guardrails: sane default page sizes, `has_more` surfacing | done | — | — (flows default to 25/page; atomic tools stay 1:1 pass-through by design — the result cap catches runaway payloads; `has_more` impossible without response schemas) |
 | P6.3 | Object permissions read/write | done | P1.2 | `GET …/permission/full`, `POST …/permission`, `DELETE …/permission/{permissionGGUID}` |
-| P6.4 | OAuth2 authorization-code support as alternative to Basic Auth | blocked | — | — (needs a live OAuth2-enabled installation to verify against) |
+| P6.4 | OAuth2 authorization-code support as alternative to Basic Auth | blocked | — | — (no OAuth2-capable installation exists yet; expected within ~6 months, revisit then) |
 | P6.5 | Structured logging + request timing to stderr | done | — | — (method/path/status/duration per call; GENESISWORLD_QUIET=true disables) |
-| P6.6 | npm publish / release pipeline | blocked | — | — (needs npm credentials + maintainer decision on package scope) |
+| P6.6 | npm publish / release pipeline | done | — | — (package renamed `cas-genesis-world-mcp` — name is free on the registry; `.github/workflows/publish.yml` publishes on tag `v*`; maintainer must add the `NPM_TOKEN` repo secret once, see README "Publishing") |
+
+## P7 — Response shaping `done`
+
+Lean, shape-agnostic by design — no per-type schema knowledge required.
+
+| ID   | Item | Status | Deps | Ops |
+|------|------|--------|------|-----|
+| P7.1 | `compact` param (default **true**) on all flows: recursive prune of null/undefined/empty-string/empty-array/empty-object values (`false` and `0` are kept). genesisWorld payloads are dominated by null fields — this cuts flow results drastically | done | P3–P5 | — |
+
+## P8 — Native stage 3: Verteiler, Leads, Opportunity-Positionen `done`
+
+| ID   | Item | Status | Deps | Ops |
+|------|------|--------|------|-----|
+| P8.1 | Distribution lists: `list_distributions` (incl. `contains-address` filter), `list_distribution_addresses`, `add_distribution_addresses`, `remove_distribution_address` | done | P1.2 | `GET /v7.0/type/gwdistribution/list`, `GET/POST …/{distributionGuid}/address…`, `DELETE …/address/{addressGGUID}` |
+| P8.2 | `convert_lead` (gwsllead → opportunity) | done | P1.2 | `POST /v7.0/type/gwsllead/{dataObjectGGUID}/convert` |
+| P8.3 | `recalculate_opportunity_positions` (OpportunityContainer pass-through) | done | P1.2 | `PUT /v7.0/type/gwopportunitypos/recalculatevalues` |
+
+## P9 — Dokument-Upload `planned`
+
+Deliberately its own phase (maintainer decision, 2026-07-23): file uploads
+are multipart/binary and need live verification of the upload contract
+before implementation.
+
+| ID   | Item | Status | Deps | Ops |
+|------|------|--------|------|-----|
+| P9.1 | Upload file for a document record (new version incl.) | planned | — | `POST /v7.0/type/document/{gguid}/file/version`, `PUT/POST …/file` |
+| P9.2 | Temp file upload + standalone file create | planned | P9.1 | `POST /v7.0/type/document/file/temp`, `POST /v7.0/type/document/file` |
+| P9.3 | File locking (lock/unlock) + version restore | planned | P9.1 | `PUT/DELETE …/file/lock`, `POST …/file/version/{documentVersion}/restore` |
 
 ---
 

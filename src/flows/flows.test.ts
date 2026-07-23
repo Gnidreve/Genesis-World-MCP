@@ -18,6 +18,7 @@ import { registerFindContact } from "./find_contact.js";
 import { registerContact360 } from "./contact_360.js";
 import { registerCreateAddressSafe, looksLikeHits } from "./create_address_safe.js";
 import { registerCreateAppointmentSafe } from "./create_appointment_safe.js";
+import { prune } from "./util.js";
 import { createMockServer } from "../__tests__/test-utils.js";
 import type { MockServer } from "../__tests__/test-utils.js";
 
@@ -353,6 +354,52 @@ describe("looksLikeHits", () => {
     expect(looksLikeHits({})).toBe(false);
     expect(looksLikeHits({ note: "x" })).toBe(true);
     expect(looksLikeHits("not json")).toBe("unknown");
+  });
+});
+
+describe("prune (P7 compact)", () => {
+  it("drops null/empty noise but keeps false and 0", () => {
+    expect(
+      prune({
+        a: null,
+        b: "",
+        c: [],
+        d: {},
+        e: false,
+        f: 0,
+        g: { h: null, i: "x" },
+        j: [null, "", 1],
+      })
+    ).toEqual({ e: false, f: 0, g: { i: "x" }, j: [1] });
+  });
+
+  it("collapses to undefined when everything is empty", () => {
+    expect(prune({ a: null, b: { c: "" } })).toBeUndefined();
+  });
+});
+
+describe("flow compact behavior", () => {
+  beforeEach(() => registerTaskOverview(server as any));
+
+  it("prunes null fields by default", async () => {
+    vi.mocked(apiGet).mockResolvedValue('{"KEYWORD":"x","EMPTY":null,"BLANK":""}');
+    const result = await server.callHandler("task_overview", {
+      dataObjectGGUID: "t-9",
+      includeLinks: false,
+      includeTags: false,
+    });
+    expect(JSON.parse(result.content[0].text)).toEqual({ task: { KEYWORD: "x" } });
+  });
+
+  it("keeps everything with compact=false", async () => {
+    vi.mocked(apiGet).mockResolvedValue('{"KEYWORD":"x","EMPTY":null}');
+    const result = await server.callHandler("task_overview", {
+      dataObjectGGUID: "t-10",
+      includeLinks: false,
+      includeTags: false,
+      compact: false,
+    });
+    expect(JSON.parse(result.content[0].text).task).toEqual({ KEYWORD: "x", EMPTY: null });
   });
 });
 

@@ -42,10 +42,16 @@ export function registerFindContact(server: McpServer): void {
           .number()
           .optional()
           .describe("Page size (default 25)."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         if (!args.query && !args.phoneNumber) {
           return errorResult(
             new Error("Provide at least one of 'query' or 'phoneNumber'.")
@@ -73,7 +79,7 @@ export function registerFindContact(server: McpServer): void {
             : Promise.resolve(undefined),
         ]);
 
-        return flowResult({
+        return fr({
           textHits: textText === undefined ? undefined : parseMaybe(textText),
           phoneHits: phoneText === undefined ? undefined : parseMaybe(phoneText),
         });

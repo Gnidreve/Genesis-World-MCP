@@ -51,10 +51,16 @@ export function registerCreateAddressSafe(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Track the new address as 'recently used' (default false)."),
+        compact: z
+          .boolean()
+          .optional()
+          .describe("Prune null/empty fields from the result (default true)."),
       },
     },
     async (args) => {
       try {
+        const fr = (r: Record<string, unknown>) =>
+          flowResult(r, args.compact ?? true);
         const dupText = await apiSend(
           "POST",
           "/v7.0/type/address/duplicates",
@@ -65,7 +71,7 @@ export function registerCreateAddressSafe(server: McpServer): void {
         const hits = looksLikeHits(duplicates);
 
         if (hits !== false && !args.force) {
-          return flowResult({
+          return fr({
             created: false,
             reason:
               hits === "unknown"
@@ -82,7 +88,7 @@ export function registerCreateAddressSafe(server: McpServer): void {
           { fields: args.fields }
         );
 
-        return flowResult({
+        return fr({
           created: true,
           address: parseMaybe(createdText),
           duplicates,

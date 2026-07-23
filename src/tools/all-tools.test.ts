@@ -77,6 +77,12 @@ import { registerGetEmailFile } from "./get_email_file.js";
 import { registerListObjectPermissions } from "./list_object_permissions.js";
 import { registerSetObjectPermission } from "./set_object_permission.js";
 import { registerDeleteObjectPermission } from "./delete_object_permission.js";
+import { registerListDistributions } from "./list_distributions.js";
+import { registerListDistributionAddresses } from "./list_distribution_addresses.js";
+import { registerAddDistributionAddresses } from "./add_distribution_addresses.js";
+import { registerRemoveDistributionAddress } from "./remove_distribution_address.js";
+import { registerConvertLead } from "./convert_lead.js";
+import { registerRecalculateOpportunityPositions } from "./recalculate_opportunity_positions.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -822,6 +828,74 @@ const TOOL_CONFIGS: ToolTestCase[] = [
     sampleArgs: { dataObjectType: "ADDRESS", dataObjectGGUID: "obj-3", permissionGGUID: "perm-1" },
     expectedParams: {},
     expectedBody: NO_BODY,
+  },
+  {
+    name: "list_distributions",
+    register: (s) => registerListDistributions(s as any),
+    path: "/v7.0/type/gwdistribution/list",
+    sampleArgs: {
+      containsAddress: "addr-1",
+      whereString: "KEYWORD='News'",
+      fields: "KEYWORD",
+      orderBy: "KEYWORD ASC",
+      teamFilter: "team",
+      page: 1,
+      entriesPerPage: 10,
+    },
+    expectedParams: {
+      "contains-address": "addr-1",
+      "where-string": "KEYWORD='News'",
+      fields: "KEYWORD",
+      "order-by": "KEYWORD ASC",
+      "team-filter": "team",
+      page: 1,
+      "entries-per-page": 10,
+    },
+  },
+  {
+    name: "list_distribution_addresses",
+    register: (s) => registerListDistributionAddresses(s as any),
+    path: "/v7.0/type/gwdistribution/dist-1/address/list",
+    sampleArgs: { distributionGuid: "dist-1", fields: "KEYWORD", page: 2, entriesPerPage: 25 },
+    expectedParams: { fields: "KEYWORD", page: 2, "entries-per-page": 25 },
+  },
+  {
+    name: "add_distribution_addresses",
+    register: (s) => registerAddDistributionAddresses(s as any),
+    method: "POST",
+    path: "/v7.0/type/gwdistribution/dist-2/address",
+    sampleArgs: { distributionGuid: "dist-2", addressGGUIDs: ["a-1", "a-2"] },
+    expectedParams: {},
+    expectedBody: ["a-1", "a-2"],
+  },
+  {
+    name: "remove_distribution_address",
+    register: (s) => registerRemoveDistributionAddress(s as any),
+    method: "DELETE",
+    path: "/v7.0/type/gwdistribution/dist-3/address/a-3",
+    sampleArgs: { distributionGuid: "dist-3", addressGGUID: "a-3" },
+    expectedParams: {},
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "convert_lead",
+    register: (s) => registerConvertLead(s as any),
+    method: "POST",
+    path: "/v7.0/type/gwsllead/lead-1/convert",
+    sampleArgs: { dataObjectGGUID: "lead-1", objectType: "GWOPPORTUNITY" },
+    expectedParams: { "object-type": "GWOPPORTUNITY" },
+    expectedBody: NO_BODY,
+  },
+  {
+    name: "recalculate_opportunity_positions",
+    register: (s) => registerRecalculateOpportunityPositions(s as any),
+    method: "PUT",
+    path: "/v7.0/type/gwopportunitypos/recalculatevalues",
+    sampleArgs: {
+      container: { changedFieldName: "QUANTITY", newfieldValue: 3, positions: [] },
+    },
+    expectedParams: {},
+    expectedBody: { changedFieldName: "QUANTITY", newfieldValue: 3, positions: [] },
   },
 ];
 

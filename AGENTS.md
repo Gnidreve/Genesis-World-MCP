@@ -11,11 +11,12 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P6 done** except two externally
-blocked items (P6.4 OAuth2 — needs a live OAuth2 installation; P6.6 npm
-publish — needs credentials). 61 tools: 39 read / 22 write, 7 of them
-flows; result cap + request logging in place. New work = new ROADMAP
-items first.
+stable item IDs). Current state: **P0–P8 done** (P6.4 OAuth2 blocked —
+no OAuth2-capable installation for ~6 months; P9 document upload is the
+next planned phase). 67 tools: 41 read / 26 write, 7 of them flows;
+flow results are compacted by default (P7); result cap + request logging
+in place; npm publish pipeline ready (`cas-genesis-world-mcp`, needs the
+`NPM_TOKEN` secret once). New work = new ROADMAP items first.
 
 ## Standing orders — READ FIRST
 
@@ -107,7 +108,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (61: 39 read / 22 write; 7 flows)
+## Currently implemented tools (67: 41 read / 26 write; 7 flows)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -146,6 +147,8 @@ src/
 | 21k| `get_email_attachment`             | GET  | `/v7.0/type/emailstore/{gguid}/attachment/{attachmentId}`         |
 | 21l| `get_email_file`                   | GET  | `/v7.0/type/emailstore/{gguid}/file`                              |
 | 21m| `list_object_permissions`          | GET  | `/v7.0/type/{t}/{gguid}/permission/full`                          |
+| 21n| `list_distributions`               | GET  | `/v7.0/type/gwdistribution/list` (`contains-address` filter)      |
+| 21o| `list_distribution_addresses`      | GET  | `/v7.0/type/gwdistribution/{distributionGuid}/address/list`       |
 
 ### Flows (`kind: "flow"` — one tool, several upstream calls)
 
@@ -165,7 +168,18 @@ Also new (write, atomic): `set_contact_persons_active`
 `add_appointment_participant`, `remove_appointment_participant`,
 `set_recurrence` (POST create / PUT update in one tool),
 `delete_recurrence`, `set_alarm`, `delete_alarm`,
-`set_object_permission`, `delete_object_permission`.
+`set_object_permission`, `delete_object_permission`,
+`add_distribution_addresses`, `remove_distribution_address`,
+`convert_lead`, `recalculate_opportunity_positions`.
+
+### Flow compaction (P7)
+
+Every flow accepts `compact` (default **true**): the combined result is
+recursively pruned of null/undefined values, empty strings, empty arrays,
+and empty objects (`false` and `0` are kept — see `prune` in
+`src/flows/util.ts`). genesisWorld payloads are dominated by null fields,
+so this cuts flow results drastically without any per-type schema
+knowledge. Atomic tools stay 1:1 pass-through by design.
 
 ### Result cap & logging (P6)
 
