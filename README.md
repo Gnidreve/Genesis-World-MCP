@@ -211,6 +211,12 @@ at it:
 
 ## Configuration
 
+Two kinds of settings, kept strictly separate — no setting is both:
+**Environments** configure the deployment (where the API lives, who
+connects); **launch options** toggle behavior at startup.
+
+### Environments
+
 | Variable                   | Required | Purpose                                          |
 | --------------------------- | -------- | ------------------------------------------------ |
 | `GENESISWORLD_BASE_URL`    | **yes**  | Base URL of the REST service, e.g. `http://demo.cas.de/genesisrest.svc` |
@@ -224,10 +230,15 @@ at it:
 
 \* Required in practice for any real request to succeed.
 
-**Read-only mode** is a launch option, not an environment variable: pass
-`--read-only` on the command line (or after the image name in `docker
-run`, as shown above). This registers only the read tools — mutating
-tools are not merely blocked, they don't exist for that session.
+### Launch options
+
+| Flag          | Required | Purpose                                          |
+| ------------- | -------- | ------------------------------------------------ |
+| `--read-only` | no       | Registers only read tools for that session — mutating tools are not merely blocked, they don't exist |
+
+Pass launch options on the command line, or after the image name in
+`docker run` (as shown above). None of them have an environment-variable
+equivalent, by design.
 
 ## License
 
