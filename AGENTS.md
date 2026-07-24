@@ -20,13 +20,9 @@ in place; npm (`cas-genesis-world-mcp`) and Docker Hub
 triggered by pushing a `v*` tag (`NPM_TOKEN` / `DOCKERHUB_TOKEN` repo
 secrets already set). New work = new ROADMAP items first.
 
-**Release checklist (learned the hard way, 2026-07-23):** `package.json`'s
-`version` and the server's `version` string in `src/index.ts` must be
-bumped **in the same commit** that precedes a new `vX.Y.Z` tag, and must
-match the tag. `npm publish` fails outright if that version already
-exists on the registry (Docker Hub has no such guard — it happily
-overwrites a tag, so a forgotten bump fails silently there instead of
-loudly). Order: bump both version strings → commit → tag → push tag.
+**Release checklist (learned the hard way, 2026-07-23):** see "Publishing"
+below — the short version is bump both version strings → commit → tag →
+push tag, in that order, every time.
 
 ## Standing orders — READ FIRST
 
@@ -286,6 +282,23 @@ query params.
 6. Update `README.md`, the tool table above, and the ROADMAP item status —
    same commit (standing order #1).
 
+## Testing
+
+```bash
+npm test          # run once (CI)
+npm run test:watch  # watch mode during development
+```
+
+Vitest, upstream API mocked entirely — no real genesisWorld connection
+needed. Coverage: every atomic tool is tested declaratively via
+`TOOL_CONFIGS` in `src/tools/all-tools.test.ts` (4 generated tests each:
+registration name, endpoint path + params, success response, error
+handling); flows have hand-written tests in `src/flows/flows.test.ts`;
+`src/registry.test.ts` covers registry composition, read-only filtering,
+annotation/mode consistency, and the `readme` tool/resource. See "How to
+add an atomic tool" above for the exact steps when adding coverage for a
+new tool.
+
 ## Configuration — Environments (runtime, not hardcoded)
 
 All connection/deployment facts are passed at startup via environment
@@ -346,6 +359,30 @@ itself — credentials stay inside the container as environment variables.
 
 Rebuild after code changes: `docker build`, then stop/rm/run again with the
 same env vars.
+
+## Publishing (npm + Docker Hub)
+
+Both release channels trigger off the same `vX.Y.Z` git tag; each workflow
+runs the test suite before publishing.
+
+- **npm** — package `cas-genesis-world-mcp`,
+  [`.github/workflows/publish.yml`](./.github/workflows/publish.yml). Needs
+  repo secret `NPM_TOKEN` (npmjs.com → profile → Access Tokens →
+  Automation).
+- **Docker Hub** — image `vaatu/cas-genesis-world-mcp` (tagged with the
+  version and `latest`),
+  [`.github/workflows/docker-publish.yml`](./.github/workflows/docker-publish.yml).
+  Needs repo secret `DOCKERHUB_TOKEN` (hub.docker.com → Account Settings →
+  Security → New Access Token). If the Docker Hub account is ever renamed
+  away from `vaatu`, update the `IMAGE` env var in that workflow.
+
+**Release checklist, in this order** (learned the hard way, 2026-07-23):
+bump `version` in `package.json` and the server's version string in
+`src/index.ts` → commit → tag (`git tag vX.Y.Z`) → push the tag (`git push
+origin vX.Y.Z`). `npm publish` fails outright on a version that's already
+on the registry; Docker Hub has no such guard and will silently overwrite,
+so the bump is not optional on either side even though only npm enforces
+it.
 
 ## Known spec quirks (NSwag-generated)
 
