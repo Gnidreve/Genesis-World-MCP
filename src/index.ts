@@ -47,7 +47,7 @@ const INSTRUCTIONS =
 
 function buildServer(readOnly: boolean): McpServer {
   const server = new McpServer(
-    { name: "cas-genesisworld-mcp", version: "0.9.2" },
+    { name: "cas-genesisworld-mcp", version: "0.9.3" },
     { instructions: INSTRUCTIONS }
   );
   registerTools(server, { readOnly });

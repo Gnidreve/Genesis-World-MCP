@@ -137,6 +137,54 @@ export async function apiSend(
   return text || JSON.stringify({ ok: true, status: res.status });
 }
 
+export interface BinaryResult {
+  base64: string;
+  contentType: string;
+  byteLength: number;
+}
+
+/**
+ * Perform a POST against the genesisWorld REST API that returns a binary
+ * body (e.g. `application/octet-stream` report output) instead of JSON.
+ * The body is base64-encoded — MCP tool results are text, so this is the
+ * standard way to carry arbitrary bytes through one. Returns the raw
+ * result; callers apply `capResult` themselves when building the tool
+ * result, same as every other tool.
+ */
+export async function apiSendBinary(
+  method: "POST",
+  path: string,
+  query: QueryParams,
+  body?: unknown
+): Promise<BinaryResult> {
+  const url = buildUrl(path, query);
+  const headers = authHeaders();
+  const init: RequestInit = { method, headers };
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    init.body = JSON.stringify(body);
+  }
+
+  const startedAt = Date.now();
+  const res = await fetch(url, init);
+  logCall(method, url, res.status, startedAt);
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      `HTTP ${res.status} ${res.statusText} for ${method} ${url.pathname}${url.search}\n` +
+        text.slice(0, 4000)
+    );
+  }
+
+  const buf = await res.arrayBuffer();
+  return {
+    base64: Buffer.from(buf).toString("base64"),
+    contentType: res.headers.get("content-type") ?? "application/octet-stream",
+    byteLength: buf.byteLength,
+  };
+}
+
 /**
  * Quote an ETag value for use in an If-Match header (RFC 7232). The API
  * returns the bare value in the object's ETAG field; the header wants it

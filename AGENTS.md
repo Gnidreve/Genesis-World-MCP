@@ -11,9 +11,10 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P8, P10 done** (P6.4 OAuth2 blocked —
-no OAuth2-capable installation for ~6 months; P9 document upload is the
-next planned phase). 67 tools: 41 read / 26 write, 7 of them flows;
+stable item IDs). Current state: **P0–P8, P10–P11 done** (P6.4 OAuth2
+blocked — no OAuth2-capable installation for ~6 months; P9 document
+upload is the next planned phase). 69 tools: 43 read / 26 write, 7 of
+them flows;
 flow results are compacted by default (P7); result cap + request logging
 in place; npm (`cas-genesis-world-mcp`) and Docker Hub
 (`vaatu/cas-genesis-world-mcp`) publish pipelines are live, both
@@ -134,7 +135,7 @@ src/
   JSON payload via `jsonResult` — no interpretation.
 - Flows may reshape/project responses; that is their purpose.
 
-## Currently implemented tools (67: 41 read / 26 write; 7 flows)
+## Currently implemented tools (69: 43 read / 26 write; 7 flows)
 
 | #  | Tool                               | HTTP | Endpoint                                                          |
 |----|------------------------------------|------|-------------------------------------------------------------------|
@@ -175,6 +176,8 @@ src/
 | 21m| `list_object_permissions`          | GET  | `/v7.0/type/{t}/{gguid}/permission/full`                          |
 | 21n| `list_distributions`               | GET  | `/v7.0/type/gwdistribution/list` (`contains-address` filter)      |
 | 21o| `list_distribution_addresses`      | GET  | `/v7.0/type/gwdistribution/{distributionGuid}/address/list`       |
+| 21p| `list_report_templates`            | GET  | `/v7.0/type/report/template/{templateType}`                       |
+| 21q| `generate_report`                  | POST | `/v7.0/type/report/template/{templateGGUID}` (**read** — renders, doesn't mutate; binary response, see below) |
 
 ### Flows (`kind: "flow"` — one tool, several upstream calls)
 
@@ -222,6 +225,16 @@ spec defines no per-type field vocabulary (only `KEYWORD` is confirmed), so
 field semantics stay caller-provided, discoverable via
 `genesisworld://metadata/{objectType}`. That is also why ROADMAP item P3.4
 (typed `complete_task`) was dropped.
+
+### Binary responses (P11)
+
+A handful of endpoints return raw bytes (`application/octet-stream`, e.g.
+`generate_report`) instead of JSON. Use `apiSendBinary` (lib.ts), not
+`apiGet`/`apiSend` — `res.text()` would corrupt the payload. It returns
+`{ base64, contentType, byteLength }`; the tool wraps that as JSON text
+(`jsonResult`-style, `capResult`-capped) since MCP results are text and
+this keeps the pattern consistent with every other tool rather than
+introducing MCP's separate `resource`/`blob` content types for one case.
 
 ### Write tools (`mode: "write"` — hidden in read-only mode)
 
@@ -415,6 +428,15 @@ it.
   omitted, not independently reproduced against a live server here). This
   is why `GENESISWORLD_PRODUCT_KEY` is a mandatory Environment (P10.1)
   despite the spec presenting it as optional/alternative.
+- **Report generation is essentially undocumented.** `/type/report/...`
+  has no description text, no `exportOptions` enum, and no keyword in the
+  entire spec hints at the underlying engine — "Crystal Reports" (which
+  `generate_report`'s tool description mentions) is product knowledge
+  about CAS genesisWorld generally, not something swagger.json states;
+  treat it as unverified. `records` (which data objects) and
+  `exportOptions` (an opaque string) are the only two request fields;
+  the response `Content-Type` is presumably driven by how the template
+  itself is configured server-side.
 
 ## Out of scope
 

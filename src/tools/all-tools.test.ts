@@ -83,6 +83,7 @@ import { registerAddDistributionAddresses } from "./add_distribution_addresses.j
 import { registerRemoveDistributionAddress } from "./remove_distribution_address.js";
 import { registerConvertLead } from "./convert_lead.js";
 import { registerRecalculateOpportunityPositions } from "./recalculate_opportunity_positions.js";
+import { registerListReportTemplates } from "./list_report_templates.js";
 
 // ---------------------------------------------------------------------------
 // Declarative tool configuration
@@ -896,6 +897,13 @@ const TOOL_CONFIGS: ToolTestCase[] = [
     },
     expectedParams: {},
     expectedBody: { changedFieldName: "QUANTITY", newfieldValue: 3, positions: [] },
+  },
+  {
+    name: "list_report_templates",
+    register: (s) => registerListReportTemplates(s as any),
+    path: "/v7.0/type/report/template/ADDRESS",
+    sampleArgs: { templateType: "ADDRESS" },
+    expectedParams: {},
   },
 ];
 

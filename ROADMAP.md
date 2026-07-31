@@ -164,6 +164,28 @@ P1.2, which gave read-only mode both an env var and a CLI flag.
 | P10.2 | `GENESISWORLD_READ_ONLY` env var removed (hard break, no deprecation window — minimal adoption at the time). `--read-only` launch option is now the only way to activate read-only mode | done | P1.2 | — |
 | P10.3 | `MCP_TRANSPORT` / `MCP_HOST` / `MCP_PORT` reaffirmed as Environments, not converted to launch options (maintainer decision: they're network/bind facts, not behavior switches) | done | — | — |
 
+## P11 — Reports `done`
+
+Maintainer decision, 2026-07-24: `/type/report/...` was previously
+unexamined. swagger.json documents no report-related keywords at all
+(`Crystal`, `PDF` do not appear); the underlying engine is not confirmed
+by the API — treat any "Crystal Reports" framing as informed speculation
+about the CAS genesisWorld product, not a spec fact.
+
+| ID    | Item | Status | Deps | Ops |
+|-------|------|--------|------|-----|
+| P11.1 | `list_report_templates` — list templates by (commonly data-object) type | done | — | `GET /v7.0/type/report/template/{templateType}` |
+| P11.2 | `generate_report` — render a template for a set of records, returned as base64. `mode: "read"` despite POST (no CRM mutation). New `apiSendBinary` primitive in `lib.ts` for `application/octet-stream` responses — MCP results are text, so binary output is base64-wrapped in JSON (`contentType`, `byteLengthDecoded`, `dataBase64`), capped via the existing `capResult` like every other tool | done | — | `POST /v7.0/type/report/template/{templateGGUID}` |
+
+**Known unknowns** (undocumented in swagger.json, unverified against a
+live server): the `exportOptions` request field is a bare string with no
+enum — valid values (e.g. a format name) are unknown; the response
+`Content-Type` — and therefore the actual output format (PDF vs. DOCX vs.
+something else) — is presumably determined by how the template itself is
+configured in genesisWorld's report designer, not solely by
+`exportOptions`. `generate_report`'s tool description says as much so an
+agent doesn't present guessed values as fact.
+
 ---
 
 ## Coverage ledger

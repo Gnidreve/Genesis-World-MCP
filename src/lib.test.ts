@@ -145,6 +145,68 @@ describe("apiSend", () => {
   });
 });
 
+describe("apiSendBinary", () => {
+  let apiSendBinary: typeof import("./lib.js").apiSendBinary;
+  const fetchMock = vi.fn();
+
+  beforeAll(async () => {
+    process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    process.env.GENESISWORLD_PRODUCT_KEY = "test-product-key";
+    vi.resetModules();
+    ({ apiSendBinary } = await import("./lib.js"));
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  it("base64-encodes the body and reports content-type/length", async () => {
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]); // "%PDF"
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      arrayBuffer: async () => bytes.buffer,
+      headers: { get: (name: string) => (name.toLowerCase() === "content-type" ? "application/pdf" : null) },
+    });
+    const result = await apiSendBinary("POST", "/p", {}, { a: 1 });
+    expect(result.contentType).toBe("application/pdf");
+    expect(result.byteLength).toBe(4);
+    expect(Buffer.from(result.base64, "base64")).toEqual(Buffer.from(bytes));
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe("http://api.test/svc/p");
+    expect(init.headers["Content-Type"]).toBe("application/json");
+    expect(init.body).toBe('{"a":1}');
+  });
+
+  it("falls back to application/octet-stream without a content-type header", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      arrayBuffer: async () => new ArrayBuffer(0),
+      headers: { get: () => null },
+    });
+    const result = await apiSendBinary("POST", "/p", {});
+    expect(result.contentType).toBe("application/octet-stream");
+    expect(result.byteLength).toBe(0);
+  });
+
+  it("throws with status and body excerpt on HTTP errors", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      text: async () => "no such template",
+    });
+    await expect(apiSendBinary("POST", "/p", {}, {})).rejects.toThrow(
+      /HTTP 404.*POST.*no such template/s
+    );
+  });
+});
+
 describe("jsonResult", () => {
   it("pretty-prints JSON", () => {
     const result = jsonResult('{"hello":"world"}');

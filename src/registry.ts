@@ -77,6 +77,8 @@ import { tool as addDistributionAddresses } from "./tools/add_distribution_addre
 import { tool as removeDistributionAddress } from "./tools/remove_distribution_address.js";
 import { tool as convertLead } from "./tools/convert_lead.js";
 import { tool as recalculateOpportunityPositions } from "./tools/recalculate_opportunity_positions.js";
+import { tool as listReportTemplates } from "./tools/list_report_templates.js";
+import { tool as generateReport } from "./tools/generate_report.js";
 
 export const REGISTRY: ToolDef[] = [
   readme,
@@ -146,6 +148,8 @@ export const REGISTRY: ToolDef[] = [
   removeDistributionAddress,
   convertLead,
   recalculateOpportunityPositions,
+  listReportTemplates,
+  generateReport,
 ];
 
 export interface RegisterOptions {

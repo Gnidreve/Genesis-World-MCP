@@ -14,7 +14,7 @@ AI agent to your **CAS genesisWorld** CRM. Search contacts, manage tasks and
 appointments, and read or write records — through natural language, without
 writing a single API call.
 
-- **67 tools**, including **7 native flows** that bundle multi-step CRM
+- **69 tools**, including **7 native flows** that bundle multi-step CRM
   operations (like checking for scheduling conflicts before booking a
   meeting, or checking for duplicates before creating a contact) into a
   single call.
@@ -62,6 +62,7 @@ Once connected, your agent can handle requests like:
 - *"Book a meeting with the sales team next Tuesday at 10am — check everyone's
   calendar for conflicts first."*
 - *"Check for possible duplicates before creating a new contact for Acme Corp."*
+- *"Generate a report for this opportunity."*
 
 Requests like these are answered by **flows** — single tool calls that
 bundle the multi-step sequence of API requests a human would otherwise have
@@ -82,9 +83,9 @@ to script by hand.
 | `create_appointment_safe` | write | Optional conflict check → create → add participants, in one call |
 
 <details>
-<summary><strong>Full tool reference (60 atomic tools)</strong></summary>
+<summary><strong>Full tool reference (62 atomic tools)</strong></summary>
 
-#### Read (37)
+#### Read (39)
 
 | Tool                               | Endpoint                                                          |
 |-------------------------------------|-------------------------------------------------------------------|
@@ -124,6 +125,8 @@ to script by hand.
 | `list_object_permissions`          | `GET /v7.0/type/{t}/{gguid}/permission/full`                      |
 | `list_distributions`               | `GET /v7.0/type/gwdistribution/list`                              |
 | `list_distribution_addresses`      | `GET /v7.0/type/gwdistribution/{distributionGuid}/address/list`   |
+| `list_report_templates`            | `GET /v7.0/type/report/template/{templateType}`                   |
+| `generate_report`                  | `POST /v7.0/type/report/template/{templateGGUID}` (read despite POST — renders, doesn't mutate) |
 | `readme` (tool form)                | server-local static orientation document                          |
 
 #### Write (23 — hidden in read-only mode, along with the write flows above)
