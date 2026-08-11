@@ -1,0 +1,55 @@
+Authentication via OAuth2
+
+OAuth2 can be used as authentication method for e-mail accounts in CAS genesisWorld. At the moment, Microsoft Exchange online is supported as OAuth2 provider. As only this provider is currently supported, only settings for this provider are available.
+
+The administrator defines the necessary settings for the authentication method in the Management Console.
+
+OAuth2 can be defined both in the wizard when creating an e-mail account and also in the properties of an existing e-mail account.
+Defining the authentication method for e-mail accounts
+
+    When setting up an e-mail account using the wizard, the setup of the authentication method is performed on the Server information for the e-mail account page.
+
+    Configuring e-mail accounts
+
+    In the e-mail account properties, this is done on the E-mail server information tab.
+
+    E-mail account properties
+
+    In both cases, you have to select the OAuth2 enter from the Password authentication drop-down list.
+
+After having completed the set up of an e-mail account with the wizard and/or when closing the properties of an e-mail account, the registration page of the e-mail account is opened at the OAuth2 provider.
+
+Registering with the OAuth2 provider can be skipped and all settings for an account can still be saved.
+
+Whether a valid authentication of the user exists on the OAuth2 provider side is checked during access via an e-mail account. With the CAS genesisWorld e-mail client, this is done, for example, when displaying e-mails, opening e-mail views or with e-mail rules on the server.
+
+The administrator can or cannot set e-mail accounts and the default account for users. Depending on the settings of the administrator, users can or cannot set up e-mail accounts or a default account themselves and, if necessary, change predefined accounts.
+
+    If the administrator sets up your e-mail account for you, you can therefore change passwords retroactively via the OAuth2 service provider.
+
+You can also change your passwords if you are not allowed to create or change e-mail accounts in CAS genesisWorld.
+
+    If you do not define an authentication in the e-mail account wizard or the account properties, you can also define the authentication when accessing the e-mail account for the first time.
+
+You can also change the authentication method if you are not allowed to create or change e-mail accounts in CAS genesisWorld.
+Authentication via Microsoft Exchange Online
+
+After you have clicked Finish in the e-mail account wizard, saved the settings, or used an IMAP account in CAS genesisWorld for the first time, the default browser opens on the Microsoft Exchange Online logon page.
+
+    Log on using your Microsoft Exchange Online account.
+
+Authentication occurs via the transmission of so-called tokens. After logon, you will receive a hint informing you whether the OAuth2 authentication has been successful.
+
+After the authentication, you can access e-mails and the following functions of the e-mail account:
+
+    creating e-mail views,
+    displaying e-mails in folders in the navigator,
+    server-side e-mail rules,
+    sending e-mails,
+    sending e-mail campaigns and time-delayed e-mail campaigns,
+    sending invitations to appointments, and
+    the out of office wizard.
+
+The authentication can fail for two reasons: either no refresh token is available or the refresh token is no longer valid.
+
+    In this case, the default browser opens on the Microsoft Exchange Online logon page as soon as you access the e-mails and functions of the e-mail account.
