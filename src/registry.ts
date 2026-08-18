@@ -165,6 +165,17 @@ export function isReadOnly(argv: string[] = process.argv): boolean {
   return argv.includes("--read-only");
 }
 
+/**
+ * Resolve client-credentials mode from the `--client-credentials` CLI flag
+ * (ROADMAP P12) — a launch option, not an environment variable, per the same
+ * "Launch Options vs. Environments" rule as `--read-only`. In this mode the
+ * server holds no fixed genesisWorld identity; each HTTP client supplies its
+ * own credentials per request (see src/credentials.ts). HTTP transport only.
+ */
+export function isClientCredentials(argv: string[] = process.argv): boolean {
+  return argv.includes("--client-credentials");
+}
+
 /** Register all tools allowed by the launch mode; returns what was registered. */
 export function registerTools(
   server: McpServer,

@@ -2,6 +2,8 @@
  * Shared utilities for the CAS genesisWorld MCP server.
  */
 
+import { credentialsStorage } from "./credentials.js";
+
 type QueryValue = string | number | boolean | undefined | null;
 type QueryParams = Record<string, QueryValue | QueryValue[]>;
 
@@ -10,7 +12,18 @@ const USERNAME = process.env.GENESISWORLD_USERNAME ?? "";
 const PASSWORD = process.env.GENESISWORLD_PASSWORD ?? "";
 const PRODUCT_KEY = process.env.GENESISWORLD_PRODUCT_KEY;
 
-export function ensureConfig(): void {
+export interface EnsureConfigOptions {
+  /**
+   * `--client-credentials` mode (ROADMAP P12): the server holds no fixed
+   * genesisWorld identity of its own, so GENESISWORLD_USERNAME/PASSWORD are
+   * not required and GENESISWORLD_PRODUCT_KEY is optional (it becomes a
+   * fallback default for requests whose client omits its own product key —
+   * see src/credentials.ts).
+   */
+  clientCredentials?: boolean;
+}
+
+export function ensureConfig(opts: EnsureConfigOptions = {}): void {
   if (!BASE_URL) {
     console.error(
       "[cas-genesisworld-mcp] FATAL: GENESISWORLD_BASE_URL is not set. " +
@@ -18,6 +31,15 @@ export function ensureConfig(): void {
         "http://your-server/genesisrest.svc"
     );
     process.exit(1);
+  }
+
+  if (opts.clientCredentials) {
+    console.error(
+      "[cas-genesisworld-mcp] --client-credentials mode: this server holds " +
+        "no fixed genesisWorld identity. Each request must supply its own " +
+        "Basic Auth credentials via headers (see AGENTS.md)."
+    );
+    return;
   }
 
   if (!PRODUCT_KEY) {
@@ -47,11 +69,15 @@ export function getBaseUrl(): string {
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (USERNAME || PASSWORD) {
-    const token = Buffer.from(`${USERNAME}:${PASSWORD}`).toString("base64");
+  const override = credentialsStorage.getStore();
+  const username = override?.username ?? USERNAME;
+  const password = override?.password ?? PASSWORD;
+  const productKey = override?.productKey ?? PRODUCT_KEY;
+  if (username || password) {
+    const token = Buffer.from(`${username}:${password}`).toString("base64");
     headers["Authorization"] = `Basic ${token}`;
   }
-  headers["X-CAS-PRODUCT-KEY"] = PRODUCT_KEY ?? "";
+  headers["X-CAS-PRODUCT-KEY"] = productKey ?? "";
   return headers;
 }
 

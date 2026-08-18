@@ -199,6 +199,42 @@ docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
   vaatu/cas-genesis-world-mcp --read-only
 ```
 
+### Multi-tenant: one server, many genesisWorld identities
+
+By default the container has one fixed genesisWorld identity for every
+client that connects. With `--client-credentials`, it has none — each
+client authenticates itself, so one server can safely serve several
+people/teams with different genesisWorld logins:
+
+```bash
+docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://your-genesisworld-server/genesisrest.svc" \
+  vaatu/cas-genesis-world-mcp --client-credentials
+```
+
+Each client then sends its own credentials as headers when connecting:
+
+```json
+{
+  "mcpServers": {
+    "cas-genesisworld": {
+      "url": "http://localhost:8084/mcp",
+      "headers": {
+        "X-GenesisWorld-Username": "your-username",
+        "X-GenesisWorld-Password": "your-password"
+      }
+    }
+  }
+}
+```
+
+`X-GenesisWorld-Product-Key` is optional here — if you keep
+`GENESISWORLD_PRODUCT_KEY` set on the server, clients that omit their own
+product key fall back to it. HTTP transport only (there's no per-request
+header channel on stdio); a request missing both username and password
+headers is rejected outright (HTTP 401), it never falls back to a shared
+identity.
+
 The MCP endpoint is now at `http://localhost:8084/mcp`. Point your client
 at it:
 
@@ -223,7 +259,7 @@ connects); **launch options** toggle behavior at startup.
 | Variable                   | Required | Purpose                                          |
 | --------------------------- | -------- | ------------------------------------------------ |
 | `GENESISWORLD_BASE_URL`    | **yes**  | Base URL of the REST service, e.g. `http://demo.cas.de/genesisrest.svc` |
-| `GENESISWORLD_PRODUCT_KEY` | **yes**  | Sent as `X-CAS-PRODUCT-KEY` on every request      |
+| `GENESISWORLD_PRODUCT_KEY` | yes\*    | Sent as `X-CAS-PRODUCT-KEY` on every request      |
 | `GENESISWORLD_USERNAME`    | yes\*    | Basic Auth user                                   |
 | `GENESISWORLD_PASSWORD`    | yes\*    | Basic Auth password                               |
 | `MCP_TRANSPORT`            | no       | `http` (default in Docker) or `stdio`             |
@@ -231,13 +267,16 @@ connects); **launch options** toggle behavior at startup.
 | `GENESISWORLD_MAX_RESULT_CHARS` | no  | Truncate oversized responses (default 60000 chars; `0` disables) |
 | `GENESISWORLD_QUIET`       | no       | `true` disables per-request stderr logging        |
 
-\* Required in practice for any real request to succeed.
+\* Required in practice for any real request to succeed — except in
+`--client-credentials` mode (see below), where the server has no identity
+of its own and none of these three are required.
 
 ### Launch options
 
-| Flag          | Required | Purpose                                          |
-| ------------- | -------- | ------------------------------------------------ |
-| `--read-only` | no       | Registers only read tools for that session — mutating tools are not merely blocked, they don't exist |
+| Flag                    | Required | Purpose                                          |
+| ------------------------ | -------- | ------------------------------------------------ |
+| `--read-only`            | no       | Registers only read tools for that session — mutating tools are not merely blocked, they don't exist |
+| `--client-credentials`   | no       | Server holds no fixed genesisWorld identity; each HTTP client authenticates itself via request headers (see "Multi-tenant" above). HTTP transport only |
 
 Pass launch options on the command line, or after the image name in
 `docker run` (as shown above). None of them have an environment-variable

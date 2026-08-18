@@ -19,6 +19,11 @@
  *
  * Launch options (behavior switches, CLI flags only, never env vars):
  *   --read-only               registers only mode:"read" tools
+ *   --client-credentials      server holds no fixed genesisWorld identity;
+ *                             each HTTP client supplies its own Basic Auth
+ *                             (and optionally its own product key) via
+ *                             request headers (see src/credentials.ts).
+ *                             HTTP transport only.
  *
  * The base URL is NOT hardcoded — the demo URL above is only an example.
  *
@@ -34,9 +39,14 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { ensureConfig, getBaseUrl } from "./lib.js";
-import { isReadOnly, registerTools } from "./registry.js";
+import { isReadOnly, isClientCredentials, registerTools } from "./registry.js";
 import { README_URI } from "./resources/readme.js";
 import { registerMetadataResources } from "./resources/metadata.js";
+import {
+  credentialsStorage,
+  credentialsFromHeaders,
+  type RequestCredentials,
+} from "./credentials.js";
 
 const INSTRUCTIONS =
   "CAS genesisWorld CRM access. Start by reading the static orientation " +
@@ -47,7 +57,7 @@ const INSTRUCTIONS =
 
 function buildServer(readOnly: boolean): McpServer {
   const server = new McpServer(
-    { name: "cas-genesisworld-mcp", version: "0.9.3" },
+    { name: "cas-genesisworld-mcp", version: "0.10.0" },
     { instructions: INSTRUCTIONS }
   );
   registerTools(server, { readOnly });
@@ -56,12 +66,23 @@ function buildServer(readOnly: boolean): McpServer {
 }
 
 async function main() {
-  ensureConfig();
+  const clientCredentials = isClientCredentials();
+  const transport = process.env.MCP_TRANSPORT ?? "stdio";
+
+  if (clientCredentials && transport !== "http") {
+    console.error(
+      "[cas-genesisworld-mcp] FATAL: --client-credentials requires " +
+        "MCP_TRANSPORT=http (per-request credentials only make sense over " +
+        "per-request HTTP headers; stdio has no such channel)."
+    );
+    process.exit(1);
+  }
+
+  ensureConfig({ clientCredentials });
 
   const BASE_URL = getBaseUrl();
   const readOnly = isReadOnly();
   const mode = readOnly ? "read-only" : "read-write";
-  const transport = process.env.MCP_TRANSPORT ?? "stdio";
   const createServer = () => buildServer(readOnly);
 
   if (transport === "http") {
@@ -71,6 +92,7 @@ async function main() {
 
     const app = createMcpExpressApp({ host });
     const transports = new Map<string, StreamableHTTPServerTransport | SSEServerTransport>();
+    const sessionCredentials = new Map<string, RequestCredentials>();
 
     const connectSession = async (t: StreamableHTTPServerTransport | SSEServerTransport) => {
       const s = createServer();
@@ -78,43 +100,87 @@ async function main() {
       t.onclose = () => {
         if (closing) return;
         closing = true;
-        if (t.sessionId) transports.delete(t.sessionId);
+        if (t.sessionId) {
+          transports.delete(t.sessionId);
+          sessionCredentials.delete(t.sessionId);
+        }
         s.close().catch(() => {});
       };
       await s.connect(t as Parameters<McpServer["connect"]>[0]);
     };
 
+    const runHandler = (creds: RequestCredentials | undefined, fn: () => Promise<void>) =>
+      creds ? credentialsStorage.run(creds, fn) : fn();
+
     app.all(endpoint, async (req: any, res: any) => {
       try {
         const sessionId = req.headers["mcp-session-id"];
         let t: StreamableHTTPServerTransport;
+        let creds: RequestCredentials | undefined;
+
         if (typeof sessionId === "string") {
           const existing = transports.get(sessionId);
           if (existing instanceof StreamableHTTPServerTransport) {
             t = existing;
+            creds = sessionCredentials.get(sessionId);
           } else {
             res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Unknown session" }, id: null });
             return;
           }
         } else if (req.method === "POST" && isInitializeRequest(req.body)) {
+          if (clientCredentials) {
+            creds = credentialsFromHeaders(req.headers);
+            if (!creds) {
+              res.status(401).json({
+                jsonrpc: "2.0",
+                error: {
+                  code: -32000,
+                  message:
+                    "Missing credentials: this server runs in --client-credentials " +
+                    "mode and requires the X-GenesisWorld-Username and " +
+                    "X-GenesisWorld-Password headers (optionally X-GenesisWorld-Product-Key).",
+                },
+                id: null,
+              });
+              return;
+            }
+          }
+          const initCreds = creds;
           t = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
-            onsessioninitialized: (id) => { transports.set(id, t); },
+            onsessioninitialized: (id) => {
+              transports.set(id, t);
+              if (initCreds) sessionCredentials.set(id, initCreds);
+            },
           });
           await connectSession(t);
         } else {
           res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "No session" }, id: null });
           return;
         }
-        await t.handleRequest(req, res, req.body);
+        await runHandler(creds, () => t.handleRequest(req, res, req.body));
       } catch (err) {
         if (!res.headersSent) res.status(500).end();
       }
     });
 
     app.get("/sse", async (req: any, res: any) => {
+      let creds: RequestCredentials | undefined;
+      if (clientCredentials) {
+        creds = credentialsFromHeaders(req.headers);
+        if (!creds) {
+          res.status(401).json({
+            error:
+              "Missing credentials: this server runs in --client-credentials mode " +
+              "and requires the X-GenesisWorld-Username and X-GenesisWorld-Password " +
+              "headers (optionally X-GenesisWorld-Product-Key).",
+          });
+          return;
+        }
+      }
       const t = new SSEServerTransport("/messages", res);
       transports.set(t.sessionId, t);
+      if (creds) sessionCredentials.set(t.sessionId, creds);
       await connectSession(t);
     });
 
@@ -122,7 +188,8 @@ async function main() {
       const sessionId = req.query?.sessionId as string | undefined;
       const existing = sessionId ? transports.get(sessionId) : undefined;
       if (existing instanceof SSEServerTransport) {
-        await existing.handlePostMessage(req, res, req.body);
+        const creds = sessionId ? sessionCredentials.get(sessionId) : undefined;
+        await runHandler(creds, () => existing.handlePostMessage(req, res, req.body));
       } else {
         res.status(400).end();
       }
@@ -133,7 +200,8 @@ async function main() {
       srv.once("error", reject);
     });
 
-    console.error(`[cas-genesisworld-mcp] running on http://${host}:${port}${endpoint} (mode=${mode}, base_url=${BASE_URL})`);
+    const modeSuffix = clientCredentials ? ", identity=per-request (--client-credentials)" : "";
+    console.error(`[cas-genesisworld-mcp] running on http://${host}:${port}${endpoint} (mode=${mode}, base_url=${BASE_URL}${modeSuffix})`);
   } else {
     const t = new StdioServerTransport();
     await createServer().connect(t);

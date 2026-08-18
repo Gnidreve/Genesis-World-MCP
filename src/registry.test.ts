@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { REGISTRY, isReadOnly, registerTools } from "./registry.js";
+import { REGISTRY, isReadOnly, isClientCredentials, registerTools } from "./registry.js";
 import { README_TEXT, README_URI } from "./resources/readme.js";
 import { createMockServer } from "./__tests__/test-utils.js";
 import type { ToolDef } from "./types.js";
@@ -117,6 +117,16 @@ describe("read-only mode resolution — launch option only (P1.2)", () => {
 
   it("defaults to read-write", () => {
     expect(isReadOnly(["node", "index.js"])).toBe(false);
+  });
+});
+
+describe("client-credentials mode resolution — launch option only (P12)", () => {
+  it("via --client-credentials CLI flag", () => {
+    expect(isClientCredentials(["node", "index.js", "--client-credentials"])).toBe(true);
+  });
+
+  it("defaults to off", () => {
+    expect(isClientCredentials(["node", "index.js"])).toBe(false);
   });
 });
 

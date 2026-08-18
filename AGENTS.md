@@ -11,7 +11,7 @@ wrapper. The full upstream API surface is committed at the repo root as
 cross-reference** for every tool.
 
 The project plan lives in [`ROADMAP.md`](./ROADMAP.md) (machine-readable,
-stable item IDs). Current state: **P0–P8, P10–P11 done** (P6.4 OAuth2
+stable item IDs). Current state: **P0–P8, P10–P12 done** (P6.4 OAuth2
 blocked — no OAuth2-capable installation for ~6 months; P9 document
 upload is the next planned phase). 69 tools: 43 read / 26 write, 7 of
 them flows;
@@ -58,9 +58,10 @@ never both** — this is a hard rule, not a style preference:
   the Dockerfile's `ENTRYPOINT ["node", "dist/index.js"]` forwards `CMD`
   args straight through).
 
-Currently: **one** launch option (`--read-only`), rest are Environments.
-When adding a new mode-like toggle, classify it against this rule before
-implementing — don't default to an env var out of habit.
+Currently: **two** launch options (`--read-only`, `--client-credentials`),
+rest are Environments. When adding a new mode-like toggle, classify it
+against this rule before implementing — don't default to an env var out
+of habit.
 
 ## Operating modes (implemented — `isReadOnly` in `src/registry.ts`)
 
@@ -79,6 +80,53 @@ implementing — don't default to an env var out of habit.
 - Every tool carries MCP annotations: `readOnlyHint`, `destructiveHint`
   (true for deletes), `idempotentHint`, `title`. `registry.test.ts`
   enforces that `readOnlyHint` matches the declared `mode`.
+
+## Identity modes: fixed vs. per-request (`--client-credentials`, P12)
+
+Two mutually exclusive ways the server can hold a genesisWorld identity —
+orthogonal to read-only/read-write above (both combine freely):
+
+- **Default: fixed identity.** One genesisWorld user/product-key pair, read
+  once from Environments (`GENESISWORLD_USERNAME`/`PASSWORD`/`PRODUCT_KEY`)
+  at process start, used for every request regardless of which MCP client
+  is connected. This is the only mode stdio transport supports.
+- **`--client-credentials`** launch option: the server holds **no fixed
+  identity of its own**. It becomes a stateless multi-tenant bridge — each
+  HTTP client supplies its own genesisWorld Basic Auth credentials (and
+  optionally its own product key) on every session, via request headers on
+  the `initialize` call (Streamable HTTP `POST /mcp`, or the SSE `GET
+  /sse` handshake):
+  - `X-GenesisWorld-Username` (required)
+  - `X-GenesisWorld-Password` (required)
+  - `X-GenesisWorld-Product-Key` (optional — falls back to the server's
+    `GENESISWORLD_PRODUCT_KEY` Environment when omitted, so an operator can
+    still centralize the product key while letting each client bring its
+    own user)
+  - Missing/incomplete credentials on the init request → **HTTP 401**,
+    session is never created.
+  - **HTTP transport only.** `main()` in `src/index.ts` exits fatally if
+    `--client-credentials` is combined with `MCP_TRANSPORT=stdio` (or the
+    default stdio transport) — stdio has no per-request channel to carry
+    credentials on.
+  - Implementation: `src/credentials.ts` exports a Node
+    `AsyncLocalStorage<RequestCredentials>` (`credentialsStorage`).
+    `index.ts` extracts credentials once per session (keyed by MCP session
+    ID in a `Map`) and wraps every `transport.handleRequest(...)` /
+    `handlePostMessage(...)` call for that session in
+    `credentialsStorage.run(creds, ...)`. `lib.ts`'s `authHeaders()` reads
+    `credentialsStorage.getStore()` first and only falls back to the
+    module-level env consts when no per-request store is active — this is
+    the *only* thing that changed in `lib.ts`; none of the 69 tool files
+    know this mode exists.
+  - `ensureConfig({ clientCredentials: true })` skips the
+    `PRODUCT_KEY`/`USERNAME`/`PASSWORD` mandatory-Environment checks (they
+    would be per-request, not process-wide) but still requires
+    `GENESISWORLD_BASE_URL`.
+  - Security note: this mode makes the MCP endpoint itself the trust
+    boundary — anyone who can reach `/mcp` can authenticate as whatever
+    genesisWorld user they supply credentials for. Put it behind TLS and a
+    network boundary you control; the server does not add its own
+    authentication layer on top.
 
 ## Design pillars
 
@@ -323,7 +371,7 @@ baked into the code.
 | Variable                   | Required | Purpose                                          |
 | -------------------------- | -------- | ------------------------------------------------ |
 | `GENESISWORLD_BASE_URL`    | **yes**  | Base URL of the REST service (no trailing slash) |
-| `GENESISWORLD_PRODUCT_KEY` | **yes**  | Sent as `X-CAS-PRODUCT-KEY` header on every request (maintainer decision, 2026-07-23: mandatory, not optional — `ensureConfig` exits like it does for `BASE_URL`) |
+| `GENESISWORLD_PRODUCT_KEY` | yes\*    | Sent as `X-CAS-PRODUCT-KEY` header on every request (maintainer decision, 2026-07-23: mandatory, not optional — `ensureConfig` exits like it does for `BASE_URL`) |
 | `GENESISWORLD_USERNAME`    | yes\*    | Basic Auth user                                  |
 | `GENESISWORLD_PASSWORD`    | yes\*    | Basic Auth password                              |
 | `GENESISWORLD_MAX_RESULT_CHARS` | no  | Result cap in chars (default 60000; `0` disables truncation) |
@@ -334,11 +382,16 @@ baked into the code.
 
 \* Auth scheme for now is **HTTP Basic**. The spec also documents OAuth2
 (`authorizationCode`) — planned as P6.4, blocked on a live OAuth2-capable
-installation.
+installation. Not required at all in `--client-credentials` mode (P12) —
+there the server holds no fixed identity and `ensureConfig` skips these
+three checks; see "Identity modes" above.
 
 **`GENESISWORLD_READ_ONLY` does not exist.** Read-only is a launch option
 (`--read-only`) only — removed as an env var 2026-07-23 (hard break, no
 deprecation window; adoption was minimal at the time). Do not re-add it.
+
+**`GENESISWORLD_CLIENT_CREDENTIALS` does not exist either**, same rule:
+identity mode is a launch option (`--client-credentials`, P12) only.
 
 ## Deployment (Docker HTTP)
 
@@ -364,6 +417,14 @@ docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
   -e GENESISWORLD_USERNAME="your-user" \
   -e GENESISWORLD_PASSWORD="your-password" \
   cas-genesisworld-mcp --read-only
+
+# Client-credentials mode: no fixed identity, each HTTP client authenticates
+# itself via headers on connect (see "Identity modes" above). Note there is
+# no GENESISWORLD_USERNAME/PASSWORD here — PRODUCT_KEY is optional too, kept
+# only as a shared fallback for clients that omit their own.
+docker run -d --name cas-genesisworld-mcp -p 8084:3000 \
+  -e GENESISWORLD_BASE_URL="http://your-genesisworld-server/genesisrest.svc" \
+  cas-genesisworld-mcp --client-credentials
 ```
 
 The container starts on port **3000** internally (exposed as 8084) and

@@ -186,6 +186,22 @@ configured in genesisWorld's report designer, not solely by
 `exportOptions`. `generate_report`'s tool description says as much so an
 agent doesn't present guessed values as fact.
 
+## P12 — Client-credentials mode (multi-tenant identity) `done`
+
+Maintainer request, 2026-08: a second, opt-in operating mode where the
+server holds **no fixed genesisWorld identity of its own** and instead
+acts as a stateless bridge — each HTTP client authenticates itself.
+Orthogonal to `--read-only` (both combine freely); see AGENTS.md
+"Identity modes: fixed vs. per-request" for the full design.
+
+| ID    | Item | Status | Deps | Ops |
+|-------|------|--------|------|-----|
+| P12.1 | `src/credentials.ts`: `RequestCredentials`, `credentialsStorage` (Node `AsyncLocalStorage`), `credentialsFromHeaders()` extracting `X-GenesisWorld-Username`/`Password`/`Product-Key` from HTTP headers | done | — | — |
+| P12.2 | `lib.ts`: `authHeaders()` consults `credentialsStorage.getStore()` before falling back to the env-config identity; `ensureConfig({ clientCredentials })` skips the mandatory `PRODUCT_KEY`/`USERNAME`/`PASSWORD` checks in this mode (still requires `BASE_URL`) | done | P12.1 | — |
+| P12.3 | `--client-credentials` launch option (`isClientCredentials` in `registry.ts`, same CLI-flag-only rule as `--read-only`) | done | — | — |
+| P12.4 | `index.ts`: fail fast if `--client-credentials` is combined with stdio transport; extract + validate credentials once per session on `initialize` (Streamable HTTP and legacy SSE), reject incomplete credentials with HTTP 401, store per-session in a `Map`, wrap every `handleRequest`/`handlePostMessage` call for that session in `credentialsStorage.run(...)`, clean up on session close | done | P12.2, P12.3 | — |
+| P12.5 | Tests: `src/credentials.test.ts` (header extraction, `AsyncLocalStorage` isolation across concurrent contexts); extended `lib.test.ts` (`ensureConfig` relaxation, `authHeaders` override + product-key fallback) and `registry.test.ts` (`isClientCredentials` flag resolution) | done | P12.1–P12.4 | — |
+
 ---
 
 ## Coverage ledger

@@ -61,6 +61,26 @@ describe("ensureConfig — mandatory Environments", () => {
     ensureConfig();
     expect(exitSpy).not.toHaveBeenCalled();
   });
+
+  it("--client-credentials mode: PRODUCT_KEY/USERNAME/PASSWORD are not required", async () => {
+    process.env.GENESISWORLD_BASE_URL = "http://api.test/svc";
+    delete process.env.GENESISWORLD_PRODUCT_KEY;
+    delete process.env.GENESISWORLD_USERNAME;
+    delete process.env.GENESISWORLD_PASSWORD;
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig({ clientCredentials: true });
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it("--client-credentials mode still requires GENESISWORLD_BASE_URL", async () => {
+    delete process.env.GENESISWORLD_BASE_URL;
+    const { ensureConfig } = await import("./lib.js");
+    ensureConfig({ clientCredentials: true });
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("GENESISWORLD_BASE_URL")
+    );
+  });
 });
 
 describe("apiSend", () => {
@@ -142,6 +162,30 @@ describe("apiSend", () => {
       text: async () => "denied",
     });
     await expect(apiSend("PUT", "/p", {}, {})).rejects.toThrow(/HTTP 403.*PUT.*denied/s);
+  });
+
+  it("uses per-request credentials from credentialsStorage over env config (P12)", async () => {
+    const { credentialsStorage } = await import("./credentials.js");
+    await credentialsStorage.run(
+      { username: "alice", password: "secret", productKey: "client-key" },
+      async () => {
+        await apiSend("POST", "/p", {}, {});
+      }
+    );
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["Authorization"]).toBe(
+      `Basic ${Buffer.from("alice:secret").toString("base64")}`
+    );
+    expect(init.headers["X-CAS-PRODUCT-KEY"]).toBe("client-key");
+  });
+
+  it("per-request credentials without a productKey fall back to the env product key", async () => {
+    const { credentialsStorage } = await import("./credentials.js");
+    await credentialsStorage.run({ username: "bob", password: "pw" }, async () => {
+      await apiSend("POST", "/p", {}, {});
+    });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["X-CAS-PRODUCT-KEY"]).toBe("test-product-key");
   });
 });
 
